@@ -87,11 +87,11 @@ class strava_workouts:
           result = False
 
         if usage_daily >= limit_daily: # Hit daily ratelimit
-          print(f"\n💥 Daily ratelimit reached. Wait until tomorrow and try again.")
+          print(f"\n💥 Daily ratelimit reached. Wait until tomorrow and try again. In the meantime, processing what we have.")
           return False
 
       else:
-        print(f"⏩ Skipping file \"{filename}\", as it already exists...")
+        print(f"🟡 Skipping file \"{filename}\", as it already exists...")
 
     return result
 

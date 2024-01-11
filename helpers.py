@@ -17,6 +17,6 @@ class misc_functions:
 
   def wait_for_it():
     for x in range(901, 0, -1):
-      print(f"⏰ 15m rate limit exceeded. Sleeping for {x} seconds  ", end='\r', flush=True)
+      print(f"⏰ Rate limit exceeded. Sleeping for {x} seconds  ", end='\r', flush=True)
       time.sleep(1)
     print("\n")

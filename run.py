@@ -55,18 +55,22 @@ print("🔐 Authentication successful!\n")
 #endregion
 
 # Get full workouts' list to download
-# print("ℹ️  Getting workout list...")
-# workout_list = {x[0]: x[1] \
-#                 for x in workouts.get_workout_list(access_token=access_token)}
+print("ℹ️  Getting workout list...")
+workout_list = {x[0]: x[1] \
+                for x in workouts.get_workout_list(access_token=access_token)}
 
 # Download all workouts
-# result = workouts.download_all_workouts(workdir=workouts_dir, \
-#                                         workout_list=workout_list, \
-#                                         access_token=access_token)
-# print(f"✅ Workouts downloaded to \"{workouts_dir}\"")
+result = workouts.download_all_workouts(workdir=workouts_dir, \
+                                        workout_list=workout_list, \
+                                        access_token=access_token)
+if result: 
+  print(f"✅ Workouts downloaded to \"{workouts_dir}\"")
+else: 
+  print(f"⚠️ Some workouts downloaded to \"{workouts_dir}\"")
+
 
 # Extract tracks and convert them to gpx
-print("✅ Extracting tracks to gpx files...")
+print("ℹ️  Extracting tracks to gpx files...")
 filelist = workouts.get_files(workdir=workouts_dir)
 
 for key in filelist.keys():
@@ -78,8 +82,8 @@ for key in filelist.keys():
         workout = json.load(f)
       track = workouts.decode_polyline(workout['map']['polyline'])
       workouts.write_gpx_from_polyline(coordinates=track, output_file=gpx_filename)
-      print(f"🗺️ Extracting to \"{gpx_filename}\"...")
+      print(f"🗺️  Extracting to \"{gpx_filename}\"...")
     else:
-      print(f"⏩ Skipping \"{gpx_filename}\"...")
+      print(f"🟡 Skipping \"{gpx_filename}\"...")
 
 print(f"✅ Success! Tracks extracted to \"{tracks_dir}\" folder")
