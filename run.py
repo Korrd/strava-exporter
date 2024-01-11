@@ -1,5 +1,5 @@
 import json, os
-from helpers import strava_oauth as oauth
+from strava_oauth import strava_oauth as oauth
 from helpers import strava_workouts as workouts
 from helpers import misc_functions as misc
 
