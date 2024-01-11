@@ -95,6 +95,17 @@ class strava_workouts:
 
     return result
 
+  def get_files(workdir: str) -> dict:
+    result = {}
+
+    for filename in os.listdir(workdir):
+      parts = filename.split("-", 1)
+      key = parts[0].strip()
+      value = filename
+      result[key] = value
+
+    return result
+
   #! WIP
   def decode_polyline(polyline_str):
     # Decode a polyline string and return a list of coordinates (latitude, longitude)

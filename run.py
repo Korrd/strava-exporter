@@ -1,4 +1,4 @@
-import os
+import os, json
 from strava_oauth import strava_oauth as oauth
 from strava_workouts import strava_workouts as workouts
 from helpers import misc_functions as misc
@@ -8,6 +8,7 @@ misc.welcome()
 #region #? Read config, secret handling, & do oauth
 workdir = f"{os.path.dirname(os.path.realpath(__file__))}"
 workouts_dir = f"{workdir}/workouts"
+tracks_dir = f"{workdir}/tracks"
 all_workouts_file = f"{workdir}/temp/all_workouts.json"
 secrets_file = f"{workdir}/temp/secrets.json"
 access_token, refresh_token = "", ""
@@ -54,16 +55,31 @@ print("🔐 Authentication successful!\n")
 #endregion
 
 # Get full workouts' list to download
-print("ℹ️  Getting workout list...")
-workout_list = {x[0]: x[1] \
-                for x in workouts.get_workout_list(access_token=access_token)}
+# print("ℹ️  Getting workout list...")
+# workout_list = {x[0]: x[1] \
+#                 for x in workouts.get_workout_list(access_token=access_token)}
 
 # Download all workouts
-result = workouts.download_all_workouts(workdir=workouts_dir, \
-                                        workout_list=workout_list, \
-                                        access_token=access_token)
+# result = workouts.download_all_workouts(workdir=workouts_dir, \
+#                                         workout_list=workout_list, \
+#                                         access_token=access_token)
+# print(f"✅ Workouts downloaded to \"{workouts_dir}\"")
 
-if result:
-  print(f"😎 All workouts downloaded to \"{workouts_dir}\".")
-else:
-  print(f"💥 Done, although some failed to download. Check logs for details. Downloaded to \"{workouts_dir}\"")
+# Extract tracks and convert them to gpx
+print("✅ Extracting tracks to gpx files...")
+filelist = workouts.get_files(workdir=workouts_dir)
+
+for key in filelist.keys():
+  if str(filelist[key]).endswith(".json"):
+    gpx_filename = f"{tracks_dir}/{filelist[key].replace('.json', '.gpx')}"
+
+    if not os.path.isfile(gpx_filename):
+      with open(f"{workouts_dir}/{filelist[key]}", mode="r") as f:
+        workout = json.load(f)
+      track = workouts.decode_polyline(workout['map']['polyline'])
+      workouts.write_gpx_from_polyline(coordinates=track, output_file=gpx_filename)
+      print(f"🗺️ Extracting to \"{gpx_filename}\"...")
+    else:
+      print(f"⏩ Skipping \"{gpx_filename}\"...")
+
+print(f"✅ Success! Tracks extracted to \"{tracks_dir}\" folder")
