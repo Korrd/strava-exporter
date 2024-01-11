@@ -1,6 +1,6 @@
 import json, os
 from strava_oauth import strava_oauth as oauth
-from helpers import strava_workouts as workouts
+from strava_workouts import strava_workouts as workouts
 from helpers import misc_functions as misc
 
 # TODO: 
@@ -9,8 +9,9 @@ from helpers import misc_functions as misc
 #! - Export each workout to a folder
 misc.welcome()
 
-#region #? Some config, secret handling, & oauth
+#region #? Read config, secret handling, & do oauth
 workdir = f"{os.path.dirname(os.path.realpath(__file__))}"
+workouts_dir = f"{workdir}/workouts"
 all_workouts_file = f"{workdir}/temp/all_workouts.json"
 secrets_file = f"{workdir}/temp/secrets.json"
 access_token, refresh_token = "", ""
@@ -53,16 +54,26 @@ else:
                           access_token=access_token, \
                           refresh_token=refresh_token)
 
-#endregion
 print("🔐 Authentication successful!\n")
+#endregion
 
 # Get full workouts' list to download, and store it
 print("✅ Getting workout list...")
 workout_list = workouts.get_workout_list(access_token=access_token)
-with open(all_workouts_file, mode="w") as workout_file:
+with open(all_workouts_file, mode="w") as f:
   buffer = {workout[0]: workout[1] for workout in workout_list}
   buffer = json.dumps(buffer, indent=2)
-  workout_file.write(buffer)
+  f.write(buffer)
+
+# Download all workouts
+result = workouts.download_all_workouts(workdir=workouts_dir, \
+                                        workout_list=json.loads(buffer), \
+                                        access_token=access_token)
+
+if result:
+  print(f"😎 All workouts downloaded to \"{workdir}\".")
+else:
+  print(f"💥 Workouts downloaded to \"{workdir}\", although some failed to download.")
 
 # TODO
 #* - Store workout_list somewhere
