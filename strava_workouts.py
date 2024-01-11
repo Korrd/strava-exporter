@@ -1,4 +1,4 @@
-import requests, json, time
+import requests, json, polyline, gpxpy, gpxpy.gpx, os
 from helpers import misc_functions as misc
 
 class strava_workouts:
@@ -53,35 +53,72 @@ class strava_workouts:
       return {}
 
   def download_all_workouts(workdir: str, workout_list: dict, access_token: str) -> bool:
-    throttle_wait = 901 # Ratelimiter will reset after 15 minutes
     headers = {'Authorization': f'Bearer {access_token}'}
     for item in workout_list.keys():
-      api_url = f"https://www.strava.com/api/v3/activities/{item}"
+      filename = f"{item}-{misc.sanitize_filename(workout_list[item])}.json"
+      output_file = f'{workdir}/{filename}'
 
-      response = requests.get(api_url, headers=headers)
+      if not os.path.isfile(output_file):
+        api_url = f"https://www.strava.com/api/v3/activities/{item}"
 
-      status_code = response.status_code
-      # [15min-limit, daily-limit]
-      limit_15, limit_daily = map(int, response.headers._store['x-ratelimit-limit'][1].split(","))
-      # [15min-limit-usage, daily-limit-usage]
-      usage_15, usage_daily = map(int, response.headers._store['x-ratelimit-usage'][1].split(","))
+        response = requests.get(api_url, headers=headers)
 
-      if status_code == 200: # Success!
-        workout_data = response.json()
-        with open(f'{workdir}/{item}-{misc.sanitize_filename(workout_list[item])}.json', 'w') as f:
-          json.dump(workout_data, f, indent=2)
+        status_code = response.status_code
+        # [15min-limit, daily-limit]
+        limit_15, limit_daily = map(int, response.headers._store['x-ratelimit-limit'][1].split(","))
+        # [15min-limit-usage, daily-limit-usage]
+        usage_15, usage_daily = map(int, response.headers._store['x-ratelimit-usage'][1].split(","))
 
-        print(f"✅ 15m: [{usage_15},{limit_15}] daily: [{usage_daily},{limit_daily}] ¦ Downloaded workout \"{workout_list[item]}\"")
+        if status_code == 200: # Success!
+          workout_data = response.json()
+          with open(f'{workdir}/{item}-{misc.sanitize_filename(workout_list[item])}.json', 'w') as f:
+            json.dump(workout_data, f, indent=2)
+          print(f"✅ 15m: [{usage_15},{limit_15}] daily: [{usage_daily},{limit_daily}] ¦ Downloaded workout \"{workout_list[item]}\"")
 
-      elif status_code == 429: # Hit ratelimiter
-        misc.wait_for_it()
-        workout = strava_workouts.get_workout(item, access_token=access_token)
-        with open(f'{workdir}/{item}-{misc.sanitize_filename(workout_list[item])}.json', 'w') as f:
-          f.write(json.dumps(workout, indent=2))
+        elif status_code == 429: # Hit ratelimiter
+          misc.wait_for_it()
+          workout = strava_workouts.get_workout(item, access_token=access_token)
+          with open(f'{workdir}/{item}-{misc.sanitize_filename(workout_list[item])}.json', 'w') as f:
+            f.write(json.dumps(workout, indent=2))
+          print(f"✅ 15m: [1,{limit_15}] daily: [{usage_daily},{limit_daily}] ¦ Downloaded workout \"{workout_list[item]}\"")
 
-      elif status_code == 500: # Server error
-        print(f"❌ Workout \"{workout_list[item]}\" failed to download due to error 500")
+        elif status_code == 500: # Server error
+          print(f"❌ Workout \"{workout_list[item]}\" failed to download due to error 500")
+          result = False
 
-      if usage_daily >= limit_daily: # Hit daily ratelimit
-        print(f"\n💥 Daily ratelimit reached. Wait until tomorrow and try again.")
-        return False
+        if usage_daily >= limit_daily: # Hit daily ratelimit
+          print(f"\n💥 Daily ratelimit reached. Wait until tomorrow and try again.")
+          return False
+
+      else:
+        print(f"⏩ Skipping file \"{filename}\", as it already exists...")
+
+    return result
+
+  #! WIP
+  def decode_polyline(polyline_str):
+    # Decode a polyline string and return a list of coordinates (latitude, longitude)
+    return polyline.decode(polyline_str)
+
+  #! WIP
+  def write_gpx_from_polyline(coordinates, output_file: str):
+    # Create a GPX file with the given coordinates
+    gpx = gpxpy.gpx.GPX()
+
+    # Create a GPX track and segment
+    track = gpxpy.gpx.GPXTrack()
+    segment = gpxpy.gpx.GPXTrackSegment()
+
+    # Add points to the segment
+    for lat, lon in coordinates:
+        segment.points.append(gpxpy.gpx.GPXTrackPoint(latitude=lat, longitude=lon))
+
+    # Add the segment to the track
+    track.segments.append(segment)
+
+    # Add the track to the GPX file
+    gpx.tracks.append(track)
+
+    # Write the GPX data to the output file
+    with open(output_file, 'w') as f:
+        f.write(gpx.to_xml())
