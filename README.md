@@ -27,6 +27,13 @@ pip install -r requirements.txt
 
 ## Usage
 
+<style>video {border-radius: 12px;}</style>
+
+<video width="640" controls>
+  <source src="./img/strava-exporter.mp4" type="video/mp4" controls autoplay>
+  Your browser does not support the video tag.
+</video>
+
 - Get the `Client ID` & `Secret` values from strava's at its [API config page](https://www.strava.com/settings/api). If no API app is set, you can create a new one [following these instructions](https://developers.strava.com/docs/getting-started/#account)
 
 - Just run the tool from `run.py`, providing `Client ID` and `Secret` when asked, then wait for it. 
