@@ -27,8 +27,6 @@ pip install -r requirements.txt
 
 ## Usage
 
-<style>video {border-radius: 12px;}</style>
-
 <video width="640" controls autoplay>
   <source src="./img/strava-exporter.mp4" type="video/mp4">
   Your browser does not support the video tag.
