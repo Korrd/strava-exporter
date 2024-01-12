@@ -1,20 +1,20 @@
-# Strava exporter
+# Strava Exporter
 
-This will export all workouts from strava onto a folder.
+This tool will `export all workouts from strava onto a folder`, then `extract each workout's track and save each to gpx` files. Useful for sharing tracks and doing backups.
 
 ## Motivation
 
 Strava will only provide batch downloads of **ALL** of an user account's contents at once, which is inconvenient since we may only wish to downloads workouts and its tracks.
 
-Hence, I decided to write this so I could sync those workouts to other apps and do some backups as well.
+Hence, I decided to write this tool so I could sync those workouts to other apps and do some backups as well.
 
 ## Features
 
 - `Oauth flow support`: Implements strava's oauth, saving the pain of having to do all sort of things to get a proper token.
 - `Platforms supported`: Meant to be run on either **🍎 MacOS**, **🐧 Linux**.
-- `Ratelimiting support`: This script respects [strava's rate-limits](https://developers.strava.com/docs/rate-limits/)
+- `Ratelimiting support`: This tool respects [strava's rate-limits](https://developers.strava.com/docs/rate-limits/)
   - **15m ratelimiter**: It'll pause and then resume as the ratelimiter resets.
-  - **Daily ratelimiter**: The script will move on to the next step and extract tracks from all already downloaded workouts. You may run it again the next day to finish with remaining downloads.
+  - **Daily ratelimiter**: The tool will move on to the next step and extract tracks from all already downloaded workouts. You may run it again the next day to finish with remaining downloads.
 - `Resume capability`: You can stop it (*^C*) and continue at any time.
 
 ## Prerequisites
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 
 - Get the `Client ID` & `Secret` values from strava's at its [API config page](https://www.strava.com/settings/api). If no API app is set, you can create a new one [following these instructions](https://developers.strava.com/docs/getting-started/#account)
 
-- Just run the script from `run.py`, providing `Client ID` and `Secret` when asked, then wait for it. 
+- Just run the tool from `run.py`, providing `Client ID` and `Secret` when asked, then wait for it. 
 
   - Retrieved workouts can be found on the [workouts](./workouts/) folder, **in json format** & with all its metadata intact.
   - All `extracted tracks` will be saved to the [tracks](./tracks/) folder **in gpx format**. These come from each workout [polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm).
