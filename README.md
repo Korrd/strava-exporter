@@ -28,7 +28,7 @@ pip install -r requirements.txt
 ## Usage
 
 <video width="640" controls autoplay>
-  <source src="./img/strava-exporter.mp4" type="video/mp4">
+  <source src="https://raw.githubusercontent.com/Korrd/strava-exporter/main/img/strava-exporter.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
