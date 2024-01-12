@@ -1,4 +1,4 @@
-# Strava Exporter
+# <img src="./img/Strava_Exporter_Logo.png" alt="logo" width="24"> Strava Exporter 
 
 This tool will `export all workouts from strava onto a folder`, then `extract each workout's track and save each to gpx` files. Useful for sharing tracks and doing backups.
 
