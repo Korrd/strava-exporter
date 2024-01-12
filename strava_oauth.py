@@ -14,7 +14,8 @@ class strava_oauth:
     # Step 1: Get Authorization Code
     redirect_uri = 'http://localhost:8000/'
     auth_url = f'https://www.strava.com/oauth/authorize?{urlencode({"client_id": client_id, "redirect_uri": redirect_uri, "response_type": "code", "scope": "activity:read_all"})}'
-    print('ℹ️  Please authorize this app to read from your strava profile to continue')
+    print("\033[93m🟡 Please authorize this script to read from your Strava profile\033[0m")
+    print("\033[93m   Ensure the app being authorized is actually yours on Strava's website\033[0m")
     open_new_tab(auth_url)
 
     class RequestHandler(BaseHTTPRequestHandler):
@@ -83,10 +84,10 @@ class strava_oauth:
       return False
 
   def ask_for_secrets() -> list:
-    print("⚠️ Please, provide your Client ID and Secret from strava's API config. \n You can get these from here: https://www.strava.com/settings/api")
-    client_id = input("➡️ Client ID: ")
-    client_secret = g.getpass("➡️ Client Secret: ")
-    print("\n")
+    print("\033[93m⚠️  Please, provide your Client ID and Secret from Strava's API config.\n    You can get these from here: https://www.strava.com/settings/api\033[0m")
+
+    client_id = input("\033[95m🪪 Client ID: \033[0m")
+    client_secret = g.getpass("\033[95m🔑 Client Secret: \033[0m")
 
     return client_id, client_secret
 

@@ -17,7 +17,7 @@ if not os.path.exists(secrets_file):
   # There's no secrets file. Ask user for client ID & Secret
   client_id, client_secret = oauth.ask_for_secrets()
   if client_secret == "" or client_id == "":
-    print("❌ Either the \"Client Secret\" or \"ID\" provided are empty. Check them then try again.")
+    print("\033[91m❌ Either the \"Client Secret\" or \"ID\" provided are empty. Check them then try again.\033[0m")
     exit(1)
   else:
     # Write client info to secrets file
@@ -42,7 +42,7 @@ else:
 if access_token == "":
   # If at this point we still have no access token, we've failed and can't do anything about it,
   # so we exit with error
-  print("❌ Unable to retrieve tokens. Check provided \"Client ID\" & \"Secret\", then try again")
+  print("\033[91m❌ Unable to retrieve tokens. Check provided \"Client ID\" & \"Secret\", then try again\033[0m")
   exit(1)
 else:
   oauth.write_secrets_file(secrets_file=secrets_file, \
@@ -51,11 +51,10 @@ else:
                           access_token=access_token, \
                           refresh_token=refresh_token)
 
-print("🔐 Authentication successful!\n")
+print("\033[92m🔐 Authentication successful!\n\033[0m")
 #endregion
 
 # Get full workouts' list to download
-print("ℹ️  Getting workout list...")
 workout_list = {x[0]: x[1] \
                 for x in workouts.get_workout_list(access_token=access_token)}
 
@@ -63,27 +62,33 @@ workout_list = {x[0]: x[1] \
 result = workouts.download_all_workouts(workdir=workouts_dir, \
                                         workout_list=workout_list, \
                                         access_token=access_token)
-if result: 
-  print(f"✅ Workouts downloaded to \"{workouts_dir}\"")
+if result:
+  print(f"\033[92m✅ Workouts downloaded to {workouts_dir}\n\033[0m")
 else: 
-  print(f"⚠️ Some workouts downloaded to \"{workouts_dir}\"")
-
+  print(f"\033[93m🟡 Some workouts downloaded to {workouts_dir}\n\033[0m")
 
 # Extract tracks and convert them to gpx
-print("ℹ️  Extracting tracks to gpx files...")
+print("\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
 filelist = workouts.get_files(workdir=workouts_dir)
 
+skipped = 0
+extracted = 0
 for key in filelist.keys():
+
   if str(filelist[key]).endswith(".json"):
-    gpx_filename = f"{tracks_dir}/{filelist[key].replace('.json', '.gpx')}"
+    gpx_file = filelist[key].replace('.json', '.gpx')
+    gpx_filename = f"{tracks_dir}/{gpx_file}"
 
     if not os.path.isfile(gpx_filename):
       with open(f"{workouts_dir}/{filelist[key]}", mode="r") as f:
         workout = json.load(f)
       track = workouts.decode_polyline(workout['map']['polyline'])
       workouts.write_gpx_from_polyline(coordinates=track, output_file=gpx_filename)
-      print(f"🗺️  Extracting to \"{gpx_filename}\"...")
+      print(f"🗺️  Extracting to {gpx_file}...")
+      extracted =+ 1
     else:
-      print(f"🟡 Skipping \"{gpx_filename}\"...")
+      skipped += 1
+if skipped > 0:
+  print(f"\033[93m🟡 Skipped {skipped} already existing track{'s' if skipped != 1 else ''}\033[0m")
 
-print(f"✅ Success! Tracks extracted to \"{tracks_dir}\" folder")
+print(f"\033[92m✅ Success! {extracted} track{'s' if extracted != 1 else ''} extracted to \"{tracks_dir}\"\033[0m")
