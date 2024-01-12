@@ -101,7 +101,7 @@ class strava_workouts:
         skipped += 1
 
     if skipped > 0:
-      print(f"\033[93m🟡 Skipped \"{skipped}\" already existing workouts\033[0m")
+      print(f"\033[93m🟡 Skipped {skipped} already existing workouts\033[0m")
 
     return result
 

@@ -85,7 +85,7 @@ for key in filelist.keys():
       track = workouts.decode_polyline(workout['map']['polyline'])
       workouts.write_gpx_from_polyline(coordinates=track, output_file=gpx_filename)
       print(f"🗺️  Extracting to {gpx_file}...")
-      extracted =+ 1
+      extracted += 1
     else:
       skipped += 1
 if skipped > 0:
