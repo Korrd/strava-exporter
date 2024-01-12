@@ -26,7 +26,7 @@ class strava_workouts:
       if len(activities) == 0:
         do_download = False
       else:
-        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Downloading workout list. Stand by...", end="\r", flush=True)
+        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting workout list {'...' if page_number % 2 == 0 else '.  '}", end="\r", flush=True)
         page_number += 1
 
       # Print or save activities
@@ -34,7 +34,10 @@ class strava_workouts:
         result.append([activity["id"], activity["name"]])
 
     # print(result)
-    print(f"\n✅ Got {len(result)} activities\n")
+    print(f"\n\033[94mℹ️  Got {len(result)} activities. Retrieving them...\033[0m")
+    if len(result) >= 2000:
+      print("\n\033[93m🚦 Since the activity count is greater than strava's daily ratelimit of 2000,\033[0m")
+      print("\033[93m🚦 you may have to run this script again tomorrow to finish.\n\033[0m")
 
     return result
 
@@ -54,11 +57,15 @@ class strava_workouts:
 
   def download_all_workouts(workdir: str, workout_list: dict, access_token: str) -> bool:
     headers = {'Authorization': f'Bearer {access_token}'}
+    skipped = 0
+    result = True
+
     for item in workout_list.keys():
       filename = f"{item}-{misc.sanitize_filename(workout_list[item])}.json"
       output_file = f'{workdir}/{filename}'
 
       if not os.path.isfile(output_file):
+
         api_url = f"https://www.strava.com/api/v3/activities/{item}"
 
         response = requests.get(api_url, headers=headers)
@@ -73,25 +80,28 @@ class strava_workouts:
           workout_data = response.json()
           with open(f'{workdir}/{item}-{misc.sanitize_filename(workout_list[item])}.json', 'w') as f:
             json.dump(workout_data, f, indent=2)
-          print(f"✅ 15m: [{usage_15},{limit_15}] daily: [{usage_daily},{limit_daily}] ¦ Downloaded workout \"{workout_list[item]}\"")
+          print(f"💾 [{usage_15}/{limit_15}], [{usage_daily}/{limit_daily}] ¦ Retrieving \"{workout_list[item]}\"")
 
         elif status_code == 429: # Hit ratelimiter
           misc.wait_for_it()
           workout = strava_workouts.get_workout(item, access_token=access_token)
           with open(f'{workdir}/{item}-{misc.sanitize_filename(workout_list[item])}.json', 'w') as f:
             f.write(json.dumps(workout, indent=2))
-          print(f"✅ 15m: [1,{limit_15}] daily: [{usage_daily},{limit_daily}] ¦ Downloaded workout \"{workout_list[item]}\"")
+          print(f"💾 [{usage_15}/{limit_15}], [{usage_daily}/{limit_daily}] ¦ Retrieving \"{workout_list[item]}\"")
 
         elif status_code == 500: # Server error
-          print(f"❌ Workout \"{workout_list[item]}\" failed to download due to error 500")
+          print(f"🚫 Workout \"{workout_list[item]}\" failed to download due to error 500")
           result = False
 
         if usage_daily >= limit_daily: # Hit daily ratelimit
-          print(f"\n💥 Daily ratelimit reached. Wait until tomorrow and try again. In the meantime, processing what we have.")
+          print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again. \n   \033[92mIn the meantime, processing what we have...\033[0m")
           return False
 
       else:
-        print(f"🟡 Skipping file \"{filename}\", as it already exists...")
+        skipped += 1
+
+    if skipped > 0:
+      print(f"\033[93m🟡 Skipped \"{skipped}\" already existing workouts\033[0m")
 
     return result
 
@@ -106,12 +116,10 @@ class strava_workouts:
 
     return result
 
-  #! WIP
-  def decode_polyline(polyline_str):
+  def decode_polyline(pline: str):
     # Decode a polyline string and return a list of coordinates (latitude, longitude)
-    return polyline.decode(polyline_str)
+    return polyline.decode(pline)
 
-  #! WIP
   def write_gpx_from_polyline(coordinates, output_file: str):
     # Create a GPX file with the given coordinates
     gpx = gpxpy.gpx.GPX()
