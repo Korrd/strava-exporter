@@ -86,7 +86,7 @@ class strava_oauth:
   def ask_for_secrets() -> list:
     print("\033[93m⚠️  Please, provide your Client ID and Secret from Strava's API config.\n    You can get these from here: https://www.strava.com/settings/api\033[0m")
 
-    client_id = input("\033[95m🪪 Client ID: \033[0m")
+    client_id = g.getpass("\033[95m🪪 Client ID: \033[0m")
     client_secret = g.getpass("\033[95m🔑 Client Secret: \033[0m")
 
     return client_id, client_secret
