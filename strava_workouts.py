@@ -107,9 +107,9 @@ class strava_workouts:
       print(f"\033[93m🟡 Skipped {skipped} already existing activit{'ies' if skipped != 1 else 'y'}\033[0m")
 
     if downloaded != 0:
-      print(f"\033[92m✅ {downloaded} activit{'ies' if downloaded != 1 else 'y'} downloaded to {workdir}\n\033[0m")
+      print(f"\033[92m✅ {downloaded} activit{'ies' if downloaded != 1 else 'y'} downloaded to \"{workdir}\"\n\033[0m")
     else:
-      print(f"\033[92m✅ No new activities found. Existing ones stored at \"{workdir}\"\033[0m")
+      print(f"\033[92m✅ No new activities found. Existing ones stored at \"{workdir}\"\n\033[0m")
 
     return True
 

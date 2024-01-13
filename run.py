@@ -64,7 +64,7 @@ workouts.download_all_workouts(workdir=workouts_dir, \
                               access_token=access_token)
 
 # Extract tracks and convert them to gpx
-print("\n\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
+print("\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
 filelist = workouts.get_files(workdir=workouts_dir)
 
 skipped = 0
@@ -84,6 +84,7 @@ for key in filelist.keys():
       extracted += 1
     else:
       skipped += 1
+
 if skipped > 0:
   print(f"\033[93m🟡 Skipped {skipped} already existing track{'s' if skipped != 1 else ''}\033[0m")
 
