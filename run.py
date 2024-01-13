@@ -64,7 +64,7 @@ workouts.download_all_workouts(workdir=workouts_dir, \
                               access_token=access_token)
 
 # Extract tracks and convert them to gpx
-print("\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
+print("\n\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
 filelist = workouts.get_files(workdir=workouts_dir)
 
 skipped = 0
