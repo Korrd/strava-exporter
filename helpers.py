@@ -21,7 +21,10 @@ class misc_functions:
 
     return result
 
-  def wait_for_it():
+  def wait_for_it(extra_message: str = ""):
+    if extra_message != "":
+      print(f"\033[33m⏰ {extra_message}\033[0m")
+
     for x in range(901, 0, -1):
       print(f"\033[33m⏰ Rate limit exceeded. Sleeping for {x} seconds  \033[0m", end='\r', flush=True)
       time.sleep(1)

@@ -59,13 +59,9 @@ workout_list = {x[0]: x[1] \
                 for x in workouts.get_workout_list(access_token=access_token)}
 
 # Download all workouts
-result = workouts.download_all_workouts(workdir=workouts_dir, \
-                                        workout_list=workout_list, \
-                                        access_token=access_token)
-if result:
-  print(f"\033[92m✅ Workouts downloaded to {workouts_dir}\n\033[0m")
-else: 
-  print(f"\033[93m🟡 Some workouts downloaded to {workouts_dir}\n\033[0m")
+workouts.download_all_workouts(workdir=workouts_dir, \
+                              workout_list=workout_list, \
+                              access_token=access_token)
 
 # Extract tracks and convert them to gpx
 print("\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
@@ -91,4 +87,7 @@ for key in filelist.keys():
 if skipped > 0:
   print(f"\033[93m🟡 Skipped {skipped} already existing track{'s' if skipped != 1 else ''}\033[0m")
 
-print(f"\033[92m✅ Success! {extracted} track{'s' if extracted != 1 else ''} extracted to \"{tracks_dir}\"\033[0m")
+if extracted != 0:
+  print(f"\033[92m✅ {extracted} track{'s' if extracted != 1 else ''} extracted to \"{tracks_dir}\"\033[0m")
+else:
+  print(f"\033[92m✅ No new tracks found. Existing ones stored at \"{tracks_dir}\"\033[0m")

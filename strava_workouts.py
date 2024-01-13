@@ -19,21 +19,19 @@ class strava_workouts:
 
         continue
       elif status_code == 500:
-        print(f"💥 Encountered a \"500 - internal server error\" while retrieving workouts list. Aborting :(")
+        print(f"💥 Encountered a \"500 - internal server error\" while retrieving activities list. Aborting :(")
         exit(1)
 
       activities = activities_response.json()
       if len(activities) == 0:
         do_download = False
       else:
-        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting workout list {'...' if page_number % 2 == 0 else '.  '}", end="\r", flush=True)
+        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting activities list {'...' if page_number % 2 == 0 else '.  '}", end="\r", flush=True)
         page_number += 1
 
-      # Print or save activities
       for activity in activities:
         result.append([activity["id"], activity["name"]])
 
-    # print(result)
     print(f"\n\033[94mℹ️  Got {len(result)} activities. Retrieving them...\033[0m")
     if len(result) >= 2000:
       print("\n\033[93m🚦 Since the activity count is greater than strava's daily ratelimit of 2000,\033[0m")
@@ -58,52 +56,62 @@ class strava_workouts:
   def download_all_workouts(workdir: str, workout_list: dict, access_token: str) -> bool:
     headers = {'Authorization': f'Bearer {access_token}'}
     skipped = 0
-    result = True
+    downloaded = 0
 
-    for item in workout_list.keys():
-      filename = f"{item}-{misc.sanitize_filename(workout_list[item])}.json"
-      output_file = f'{workdir}/{filename}'
+    for key in workout_list.keys():
+      value = workout_list[key]
+      output_file = f'{workdir}/{key}-{misc.sanitize_filename(value)}.json'
 
       if not os.path.isfile(output_file):
 
-        api_url = f"https://www.strava.com/api/v3/activities/{item}"
+        api_url = f"https://www.strava.com/api/v3/activities/{key}"
 
         response = requests.get(api_url, headers=headers)
 
-        status_code = response.status_code
         # [15min-limit, daily-limit]
-        limit_15, limit_daily = map(int, response.headers._store['x-ratelimit-limit'][1].split(","))
+        lim_15, lim_daily = map(int, response.headers._store['x-ratelimit-limit'][1].split(","))
         # [15min-limit-usage, daily-limit-usage]
-        usage_15, usage_daily = map(int, response.headers._store['x-ratelimit-usage'][1].split(","))
+        u_15, u_daily = map(int, response.headers._store['x-ratelimit-usage'][1].split(","))
 
-        if status_code == 200: # Success!
-          workout_data = response.json()
-          with open(f'{workdir}/{item}-{misc.sanitize_filename(workout_list[item])}.json', 'w') as f:
-            json.dump(workout_data, f, indent=2)
-          print(f"💾 [{usage_15}/{limit_15}], [{usage_daily}/{limit_daily}] ¦ Retrieving \"{workout_list[item]}\"")
-
-        elif status_code == 429: # Hit ratelimiter
-          misc.wait_for_it()
-          workout = strava_workouts.get_workout(item, access_token=access_token)
-          with open(f'{workdir}/{item}-{misc.sanitize_filename(workout_list[item])}.json', 'w') as f:
-            f.write(json.dumps(workout, indent=2))
-          print(f"💾 [{usage_15}/{limit_15}], [{usage_daily}/{limit_daily}] ¦ Retrieving \"{workout_list[item]}\"")
-
-        elif status_code == 500: # Server error
-          print(f"🚫 Workout \"{workout_list[item]}\" failed to download due to error 500")
-          result = False
-
-        if usage_daily >= limit_daily: # Hit daily ratelimit
+        if u_daily >= lim_daily: # Hit daily ratelimit
           print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again. \n   \033[92mIn the meantime, processing what we have...\033[0m")
           return False
+
+        match response.status_code:
+          case 200: # Success!
+            with open(output_file, 'w') as f:
+              json.dump(response.json(), f, indent=2)
+            print(f"💾 Retrieving \033[1;90m{value}\033[0m")
+            downloaded += 1
+
+          case 429: # Hit ratelimiter
+            misc.wait_for_it(f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
+            workout = strava_workouts.get_workout(key, access_token=access_token)
+            with open(output_file, 'w') as f:
+              f.write(json.dumps(workout, indent=2))
+            print(f"💾 Retrieving \033[1;90m{value}\033[0m")
+            downloaded += 1
+
+          case 500: # Server error
+            print(f"🚫 Activity \"{value}\" failed to download due to error 500")
+            skipped += 1
+
+          case _:
+            print(f"🚫 Unexpected status code ({response.status_code}) while retrieving activity {value}")
+            skipped += 1
 
       else:
         skipped += 1
 
     if skipped > 0:
-      print(f"\033[93m🟡 Skipped {skipped} already existing workouts\033[0m")
+      print(f"\033[93m🟡 Skipped {skipped} already existing activit{'ies' if skipped != 1 else 'y'}\033[0m")
 
-    return result
+    if downloaded != 0:
+      print(f"\033[92m✅ {downloaded} activit{'ies' if downloaded != 1 else 'y'} downloaded to {workdir}\n\033[0m")
+    else:
+      print(f"\033[92m✅ No new activities found. Existing ones stored at \"{workdir}\"\033[0m")
+
+    return True
 
   def get_files(workdir: str) -> dict:
     result = {}
