@@ -104,3 +104,7 @@ if extracted != 0:
   print(f"\033[92m✅ {extracted} track{'s' if extracted != 1 else ''} extracted to \"{tracks_dir}\"\033[0m")
 else:
   print(f"\033[92m✅ No new tracks found. Existing ones stored at \"{tracks_dir}\"\033[0m")
+
+#TODO
+#! Implement dropbox uploader
+#! Implement a way to know which files were already uploaded, so we prevent reuploading them all every single time
