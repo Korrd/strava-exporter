@@ -24,3 +24,14 @@ class config:
       config['strava_client_secret'] = strava_client_secret
       config['dropbox_access_token'] = dropbox_access_token
       f.write(json.dumps(config))
+
+  def read_config_file(config_file: str) -> str:
+    with open(f"{config_file}", mode="r") as f:
+      config = json.loads(f.read())
+      return config['dropbox_path']
+
+  def write_config_file(config_file: str, dropbox_path: str):
+    config = {}
+    config['dropbox_path'] = dropbox_path
+    with open(f"{config_file}", mode="w") as f:
+      f.write(json.dumps(config))

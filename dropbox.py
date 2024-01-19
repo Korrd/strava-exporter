@@ -20,3 +20,10 @@ class dropbox:
     dropbox_token = g.getpass("\033[95m🔑 Dropbox Token: \033[0m")
 
     return dropbox_token
+
+  def ask_for_dropbox_path() -> str:
+    print("\033[93m⚠️  Please, provide a full path to a folder where you'd like to upload your tracks to Dropbox")
+
+    dropbox_path = input("\033[95m📂 Dropbox Folder: \033[0m")
+
+    return dropbox_path
