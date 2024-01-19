@@ -1,4 +1,4 @@
-import requests, os, json, getpass as g
+import requests, os, getpass as g
 from urllib.parse import urlencode
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from webbrowser import open_new_tab
@@ -90,16 +90,3 @@ class strava_oauth:
     client_secret = g.getpass("\033[95m🔑 Client Secret: \033[0m")
 
     return client_id, client_secret
-
-  def read_secrets_file(secrets_file: str) -> list:
-    with open(f"{secrets_file}", mode="r") as f:
-      config = json.loads(f.read())
-      return config['access_token'], \
-            config['refresh_token'], \
-            config['client_id'], \
-            config['client_secret']
-
-  def write_secrets_file(secrets_file: str, client_id: str, client_secret: str, access_token: str = "", refresh_token: str = ""):
-    with open(f"{secrets_file}", mode="w") as f:
-      buffer = f'{{"client_id": "{client_id}", "client_secret": "{client_secret}", "access_token": "{access_token}", "refresh_token": "{refresh_token}"}}'
-      f.write(buffer)
