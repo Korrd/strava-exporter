@@ -12,7 +12,15 @@ workouts_dir = f"{workdir}/workouts"
 tracks_dir = f"{workdir}/tracks"
 all_workouts_file = f"{workdir}/temp/all_workouts.json"
 secrets_file = f"{workdir}/temp/secrets.json"
+config_file = f"{workdir}/temp/config.json"
 strava_access_token, strava_refresh_token = "", ""
+
+if not os.path.exists(config_file):
+  dropbox_path = dropbox.ask_for_dropbox_path()
+  config.write_config_file(config_file=config_file, dropbox_path=dropbox_path)
+
+else:
+  dropbox_path = config.read_config_file(config_file)
 
 if not os.path.exists(secrets_file):
   # There's no secrets file. Ask user for client ID & Secret
