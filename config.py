@@ -4,11 +4,18 @@ class config:
   def read_secrets_file(secrets_file: str) -> list:
     with open(f"{secrets_file}", mode="r") as f:
       config = json.loads(f.read())
-      return config['strava_access_token'], \
-            config['strava_refresh_token'], \
-            config['strava_client_id'], \
-            config['strava_client_secret'], \
-            config['dropbox_access_token']
+      if 'access_token' in config.keys():
+        return config['access_token'], \
+              config['refresh_token'], \
+              config['client_id'], \
+              config['client_secret'], \
+              ""
+      else:
+        return config['strava_access_token'], \
+              config['strava_refresh_token'], \
+              config['strava_client_id'], \
+              config['strava_client_secret'], \
+              config['dropbox_access_token']
 
   def write_secrets_file(secrets_file: str,
                         strava_client_id: str = "",
