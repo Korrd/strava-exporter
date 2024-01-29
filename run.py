@@ -37,7 +37,14 @@ if not os.path.exists(secrets_file):
                             dropbox_access_token=dropbox_access_token)
 else: 
   # Get all credentials from file
-  strava_access_token, strava_refresh_token, strava_client_id, strava_client_secret, dropbox_access_token = config.read_secrets_file(secrets_file)
+  strava_access_token, \
+  strava_refresh_token, \
+  strava_client_id, \
+  strava_client_secret, \
+  dropbox_access_token = config.read_secrets_file(secrets_file)
+
+if dropbox_access_token == "":
+  dropbox_access_token = dropbox.ask_for_secrets()
 
 if strava_access_token == "":
   # No access token present. Let's retrieve them

@@ -26,7 +26,7 @@ class strava_workouts:
       if len(activities) == 0:
         do_download = False
       else:
-        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting activities list {'...' if page_number % 2 == 0 else '.  '}", end="\r", flush=True)
+        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting strava's activities list {'...' if page_number % 2 == 0 else '.  '}", end="\r", flush=True)
         page_number += 1
 
       for activity in activities:
