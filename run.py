@@ -4,15 +4,13 @@ from strava_workouts import strava_workouts as strava
 from dropbox import dropbox
 from helpers import misc_functions as misc
 from config import config
+
 misc.welcome()
 
 #region #? Read config, secret handling, & do oauth
 workdir = f"{os.path.dirname(os.path.realpath(__file__))}"
-workouts_dir = f"{workdir}/workouts"
-tracks_dir = f"{workdir}/tracks"
-all_workouts_file = f"{workdir}/temp/all_workouts.json"
-secrets_file = f"{workdir}/temp/secrets.json"
-config_file = f"{workdir}/temp/config.json"
+workouts_dir, tracks_dir = f"{workdir}/workouts", f"{workdir}/tracks"
+secrets_file, config_file = f"{workdir}/temp/secrets.json", f"{workdir}/temp/config.json"
 strava_access_token, strava_refresh_token = "", ""
 
 if not os.path.exists(config_file):
