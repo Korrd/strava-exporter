@@ -5,7 +5,10 @@ class misc_functions:
   #### Description
   This class provides miscelaneous helper functions and methods.
   #### Available functions
-  - `()`: 
+  - `is_duplicate(paths: list, filename: str) -> bool`: checks if a file already exists on any of the given paths
+  - `sanitize_filename(filename: str) -> str`: sanitizes a string so it can become a valid filename
+  - `wait_for_it(extra_message: str = "")`: waits for a set amount of time, while printing a message letting the user know how much time is left in seconds
+  - `welcome()`: prints the welcome message
   """
 
   def welcome():
