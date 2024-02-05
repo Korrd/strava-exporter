@@ -1,7 +1,26 @@
 import json
 
 class config:
+  """
+  #### Description
+  This class provides functions and methods related to app config.
+  #### Available functions
+  - `ask_for_tracks_output_path()`: asks for a path where to store extracted tracks
+  - `read_config_file(config_file: str) -> str`: reads the app's config file from disk
+  - `read_secrets_file(secrets_file: str) -> list`: reads the app's secrets file from disk
+  - `write_config_file(config_file: str, tracks_output_path: str)`: writes the app's config file to disk
+  - `write_secrets_file(secrets_file: str, strava_client_id: str = "", strava_client_secret: str = "", strava_access_token: str = "", strava_refresh_token: str = "")`: writes the app's secrets file to disk 
+  """
   def read_secrets_file(secrets_file: str) -> list:
+    """
+    #### Description
+    Reads the app's secrets file from disk
+    #### Parameters
+    - `secrets_file`: full path to the file where secrets are stored
+    #### Returns
+    - A list containing all of the app's secrets
+    #### Notes
+    """
     with open(f"{secrets_file}", mode="r") as f:
       config = json.loads(f.read())
       if 'access_token' in config.keys():
@@ -20,6 +39,16 @@ class config:
                         strava_client_secret: str = "",
                         strava_access_token: str = "",
                         strava_refresh_token: str = ""):
+    """
+    #### Description
+    Writes the app's secrets file to disk 
+    #### Parameters
+    - `secrets_file`: full path to the file where secrets are stored
+    - `strava_client_id`: strava's client ID (from strava's API settings)
+    - `strava_client_secret`: strava's client secret (from strava's API settings)
+    - `strava_access_token`: strava's access token
+    - `strava_refresh_token`: strava's refresh token 
+    """
     with open(f"{secrets_file}", mode="w") as f:
       config = {}
       config['strava_access_token'] = strava_access_token
@@ -29,16 +58,38 @@ class config:
       f.write(json.dumps(config))
 
   def read_config_file(config_file: str) -> str:
+    """
+    #### Description
+    Reads the app's config file from disk
+    #### Parameters
+    - `config_file`: full path to the file where config is stored
+    #### Returns
+    - `tracks_output_path`: a path where extracted tracks will be stored, user-provided
+    #### Notes
+    """
     with open(f"{config_file}", mode="r") as f:
       config = json.loads(f.read())
       return config['tracks_output_path']
 
   def write_config_file(config_file: str, tracks_output_path: str):
+    """
+    #### Description
+    Writes the app's config file to disk
+    #### Parameters
+    - `config_file`: where to store config
+    - `tracks_output_path`: a path where extracted tracks will be stored, user-provided
+    """
     config = {}
     config['tracks_output_path'] = tracks_output_path
     with open(f"{config_file}", mode="w") as f:
       f.write(json.dumps(config))
 
   def ask_for_tracks_output_path() -> str:
+    """
+    #### Description
+    Asks for a path where to store extracted tracks
+    #### Returns
+    The user-provided path
+    """
     print("\033[93m⚠️  [Optional] Please, provide a full path to a folder to store your tracks on")
     return input("\033[95m📂 Output Folder: \033[0m")
