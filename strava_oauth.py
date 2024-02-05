@@ -4,12 +4,28 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from webbrowser import open_new_tab
 
 class strava_oauth:
+  """
+  #### Description
+  This class implements strava's oauth flow, which is used to obtain permission from the user to read from its strava's profile
+  #### Available functions.
+  - `ask_for_secrets() -> list`: asks the user for both strava's client ID and secret
+  - `check_access_token(access_token: str) -> bool`: checks if the provided strava access token is still valid
+  - `do_oauth_flow(client_id: str, client_secret: str)`: performs strava's oauth flow in order to get the required access tokens
+  - `refresh_access_token(client_id: str, client_secret: str, refresh_token: str) -> str`: gets a new access token using strava's oauth refresh token
+  """
+
   def do_oauth_flow(client_id: str, client_secret: str):
-    
-    # Get auth successful screen
+    """
+    #### Description
+    Performs strava's oauth flow in order to get the required access tokens
+    #### Parameters
+    - `client_id`: client ID from strava's API config
+    - `client_secret`: client secret from strava's API config
+    #### Notes
+    Interactive function. It'll open a browser tab asking the used to authorize this app for read access
+    """
     with open(f"{os.path.dirname(os.path.realpath(__file__))}/oauth_success.htm") as file:
       html_code = bytes("".join(file.readlines()), "utf-8")
-
 
     # Step 1: Get Authorization Code
     redirect_uri = 'http://localhost:8000/'
@@ -55,6 +71,16 @@ class strava_oauth:
     return server.access_token, server.refresh_token
   
   def refresh_access_token(client_id: str, client_secret: str, refresh_token: str) -> str:
+    """
+    #### Description
+    This function gets a new access token using strava's oauth refresh token
+    #### Parameters
+    - `client_id`: client ID from strava's API config page
+    - `client_secret`: client secret from strava's API config page
+    - `refresh_token`: strava's refresh token
+    #### Returns
+    A `valid strava's access token` if successful. Otherwise an `empty string`
+    """
     token_url = 'https://www.strava.com/oauth/token'
     payload = {
       'client_id': client_id,
@@ -73,6 +99,14 @@ class strava_oauth:
       return ""
 
   def check_access_token(access_token: str) -> bool:
+    """
+    #### Description
+    Checks if the provided strava access token is still valid
+    #### Parameters
+    - `access_token`: strava's access token
+    #### Returns
+    `True` if valid, `False` otherwise
+    """
     check_url = 'https://www.strava.com/api/v3/athlete'
     headers = {'Authorization': f'Bearer {access_token}'}
 
@@ -84,6 +118,12 @@ class strava_oauth:
       return False
 
   def ask_for_secrets() -> list:
+    """
+    #### Description
+    Asks the user for both strava's client ID and secret
+    #### Returns
+    - A `user-provided` list containing two strings: `[client_id, client_secret]`
+    """
     print("\033[93m⚠️  Please, provide your Client ID and Secret from Strava's API config.\n    You can get these from here: https://www.strava.com/settings/api\033[0m")
 
     client_id = g.getpass("\033[95m🪪  Client ID: \033[0m")
