@@ -21,7 +21,7 @@ class config:
     - A list containing all of the app's secrets
     #### Notes
     """
-    with open(f"{secrets_file}", mode="r") as f:
+    with open(secrets_file, mode="r") as f:
       config = json.loads(f.read())
       if 'access_token' in config.keys():
         return config['access_token'], \
@@ -49,7 +49,7 @@ class config:
     - `strava_access_token`: strava's access token
     - `strava_refresh_token`: strava's refresh token 
     """
-    with open(f"{secrets_file}", mode="w") as f:
+    with open(secrets_file, mode="w") as f:
       config = {}
       config['strava_access_token'] = strava_access_token
       config['strava_refresh_token'] = strava_refresh_token
@@ -67,29 +67,42 @@ class config:
     - `tracks_output_path`: a path where extracted tracks will be stored, user-provided
     #### Notes
     """
-    with open(f"{config_file}", mode="r") as f:
+    with open(config_file, mode="r") as f:
       config = json.loads(f.read())
-      return config['tracks_output_path']
+      return config['tracks_output_path'], config['workouts_output_path']
 
-  def write_config_file(config_file: str, tracks_output_path: str):
+  def write_config_file(config_file: str, tracks_output_path: str, workouts_output_path: str):
     """
     #### Description
     Writes the app's config file to disk
     #### Parameters
     - `config_file`: where to store config
     - `tracks_output_path`: a path where extracted tracks will be stored, user-provided
+    - `workouts_output_path`: a path where extracted workouts will be stored, user-provided
     """
     config = {}
     config['tracks_output_path'] = tracks_output_path
-    with open(f"{config_file}", mode="w") as f:
+    config['workouts_output_path'] = workouts_output_path
+    with open(config_file, mode="w") as f:
       f.write(json.dumps(config))
 
-  def ask_for_tracks_output_path() -> str:
+  def ask_for_path(message: str, prompt: str) -> str:
     """
     #### Description
     Asks for a path where to store extracted tracks
+    #### Parameters
+    - `message`: message to show to the user
+    - `prompt`: prompt for the input box
     #### Returns
     The user-provided path
     """
-    print("\033[93m⚠️  [Optional] Please, provide a full path to a folder to store your tracks on")
-    return input("\033[95m📂 Output Folder: \033[0m")
+    print(message)
+    return input(prompt)
+
+  def get_downloaded_workouts(db_file: str) -> dict:
+    with open(db_file, mode="r") as f:
+      return json.loads(f.read())
+
+  def write_downloaded_workouts(db_file: str, workout_db: dict):
+    with open(db_file, mode="w") as f:
+      f.write(json.dumps(workout_db))

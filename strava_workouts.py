@@ -1,5 +1,6 @@
 import requests, json, polyline, gpxpy, gpxpy.gpx, os
 from helpers import misc_functions as helpers
+from config import config
 
 class strava_workouts:
   """
@@ -80,65 +81,74 @@ class strava_workouts:
     else:
       return {}
 
-  def download_all_workouts(workdir: str, workout_list: dict, access_token: str) -> bool:
+  def download_all_workouts(workdir: str,
+                            workout_list: dict,
+                            access_token: str,
+                            downloaded_workouts_db: dict,
+                            workout_db_file: str) -> bool:
     """
     #### Description
     Implements the get_workout function and downloads all workouts that are still unsaved on the workouts dir.
     #### Parameters
     - `access_token`: strava's access token
+    - `skipped`: already skipped workouts for the skipped count
     - `workdir`: working directory where our workouts will be stored
     - `workout_list`: a list of workout IDs
     #### Returns
     `True` if successful, `False` otherwise
     """
     headers = {'Authorization': f'Bearer {access_token}'}
-    skipped = 0
     downloaded = 0
+
+    skipped = len(workout_list)
+    for key in downloaded_workouts_db.keys():
+      workout_list.pop(int(key))
+    skipped = skipped - len(workout_list)
 
     for key in workout_list.keys():
       value = workout_list[key]
       output_file = f'{workdir}/{key}-{helpers.sanitize_filename(value)}.json'
 
-      if not os.path.isfile(output_file):
+      api_url = f"https://www.strava.com/api/v3/activities/{key}"
 
-        api_url = f"https://www.strava.com/api/v3/activities/{key}"
+      response = requests.get(api_url, headers=headers)
 
-        response = requests.get(api_url, headers=headers)
+      # [15min-limit, daily-limit]
+      lim_15, lim_daily = map(int, response.headers._store['x-ratelimit-limit'][1].split(","))
+      # [15min-limit-usage, daily-limit-usage]
+      u_15, u_daily = map(int, response.headers._store['x-ratelimit-usage'][1].split(","))
 
-        # [15min-limit, daily-limit]
-        lim_15, lim_daily = map(int, response.headers._store['x-ratelimit-limit'][1].split(","))
-        # [15min-limit-usage, daily-limit-usage]
-        u_15, u_daily = map(int, response.headers._store['x-ratelimit-usage'][1].split(","))
+      if u_daily >= lim_daily: # Hit daily ratelimit
+        print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again. \n   \033[92mIn the meantime, processing what we have...\033[0m")
+        config.write_downloaded_workouts(db_file=workout_db_file, workout_db=downloaded_workouts_db)
+        return False
 
-        if u_daily >= lim_daily: # Hit daily ratelimit
-          print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again. \n   \033[92mIn the meantime, processing what we have...\033[0m")
-          return False
+      match response.status_code:
+        case 200: # Success!
+          with open(output_file, 'w') as f:
+            json.dump(response.json(), f, indent=2)
+          print(f"💾 Retrieving \033[1;90m{value}\033[0m")
+          downloaded += 1
+          downloaded_workouts_db[key] = "1"
+          config.write_downloaded_workouts(db_file=workout_db_file, workout_db=downloaded_workouts_db)
 
-        match response.status_code:
-          case 200: # Success!
-            with open(output_file, 'w') as f:
-              json.dump(response.json(), f, indent=2)
-            print(f"💾 Retrieving \033[1;90m{value}\033[0m")
-            downloaded += 1
+        case 429: # Hit ratelimiter
+          helpers.wait_for_it(f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
+          workout = strava_workouts.get_workout(key, access_token=access_token)
+          with open(output_file, 'w') as f:
+            f.write(json.dumps(workout, indent=2))
+          print(f"💾 Retrieving \033[1;90m{value}\033[0m")
+          downloaded += 1
+          downloaded_workouts_db[key] = "1"
+          config.write_downloaded_workouts(db_file=workout_db_file, workout_db=downloaded_workouts_db)
 
-          case 429: # Hit ratelimiter
-            helpers.wait_for_it(f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
-            workout = strava_workouts.get_workout(key, access_token=access_token)
-            with open(output_file, 'w') as f:
-              f.write(json.dumps(workout, indent=2))
-            print(f"💾 Retrieving \033[1;90m{value}\033[0m")
-            downloaded += 1
+        case 500: # Server error
+          print(f"🚫 Activity \"{value}\" failed to download due to error 500")
+          skipped += 1
 
-          case 500: # Server error
-            print(f"🚫 Activity \"{value}\" failed to download due to error 500")
-            skipped += 1
-
-          case _:
-            print(f"🚫 Unexpected status code ({response.status_code}) while retrieving activity {value}")
-            skipped += 1
-
-      else:
-        skipped += 1
+        case _:
+          print(f"🚫 Unexpected status code ({response.status_code}) while retrieving activity {value}")
+          skipped += 1
 
     if skipped > 0:
       print(f"\033[93m🟡 Skipped {skipped} already existing activit{'ies' if skipped != 1 else 'y'}\033[0m")

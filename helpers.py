@@ -1,4 +1,5 @@
 import re, time, emoji, os
+from datetime import datetime
 
 class misc_functions:
   """
@@ -58,7 +59,15 @@ class misc_functions:
     if extra_message != "":
       print(f"\033[33m⏰ {extra_message}\033[0m")
 
-    for x in range(901, 0, -1):
+    current_time = datetime.now()
+    next_quarter_hour = (current_time.minute // 15 + 1) * 15
+    next_quarter_hour = 59 if next_quarter_hour == 60 else next_quarter_hour
+    next_quarter_hour_time = current_time.replace(minute=next_quarter_hour, second=0, microsecond=0)
+
+    time_difference = next_quarter_hour_time - current_time
+    time_wait = int(time_difference.total_seconds())
+
+    for x in range(time_wait, 0, -1):
       print(f"\033[33m⏰ Rate limit exceeded. Sleeping for {x} seconds  \033[0m", end='\r', flush=True)
       time.sleep(1)
     print("\n")

@@ -9,19 +9,37 @@ helpers.welcome()
 #region #? Read config, secret handling, & do oauth
 workdir = f"{os.path.dirname(os.path.realpath(__file__))}"
 secrets_file, config_file = f"{workdir}/temp/secrets.json", f"{workdir}/temp/config.json"
-workouts_dir = f"{workdir}/workouts"
+workout_db_file = f"{workdir}/temp/downloaded_workouts.json"
 strava_access_token, strava_refresh_token = "", ""
 
 if not os.path.exists(config_file):
-  tracks_dir = config.ask_for_tracks_output_path()
+  tracks_dir = config.ask_for_path(message="\033[93m⚠️  [Optional] Please, provide a full path to a folder to store your tracks on",
+                                    prompt="\033[95m📂 Tracks Folder: \033[0m")
+
+  workouts_dir = config.ask_for_path(message="\033[93m⚠️  [Optional] Please, provide a full path to a folder to store your workouts on",
+                                    prompt="\033[95m📂 Workouts Folder: \033[0m")
+
   if tracks_dir == "":
     tracks_dir = f"{workdir}/tracks"
-    print(f"\033[94mℹ️  Custom tracks' output dir not set. Defaulting to \"{tracks_dir}\" \033[0m")
+    print(f"\033[94mℹ️  Custom tracks output dir not set. Defaulting to \"{tracks_dir}\"\033[0m")
 
-  config.write_config_file(config_file=config_file, tracks_output_path=tracks_dir)
+  if workouts_dir == "":
+    workouts_dir = f"{workdir}/workouts"
+    print(f"\033[94mℹ️  Custom workouts output dir not set. Defaulting to \"{workouts_dir}\"\033[0m")
+
+  config.write_config_file(config_file=config_file,
+                            tracks_output_path=tracks_dir,
+                            workouts_output_path=workouts_dir)
 
 else:
-  tracks_dir = config.read_config_file(config_file)
+  tracks_dir, workouts_dir = config.read_config_file(config_file)
+
+if not os.path.exists(workout_db_file):
+  downloaded_workouts_db = {}
+  with open(workout_db_file, mode="w") as f:
+    f.write(json.dumps(downloaded_workouts_db))
+else:
+  downloaded_workouts_db = config.get_downloaded_workouts(db_file=workout_db_file)
 
 if not os.path.exists(secrets_file):
   # There's no secrets file. Ask user for client ID & Secret
@@ -75,7 +93,9 @@ workout_list = {x[0]: x[1] \
 # Download all workouts
 strava.download_all_workouts(workdir=workouts_dir, \
                               workout_list=workout_list, \
-                              access_token=strava_access_token)
+                              access_token=strava_access_token, \
+                              downloaded_workouts_db=downloaded_workouts_db, \
+                              workout_db_file=workout_db_file)
 
 # Extract tracks and convert them to gpx
 print("\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
@@ -109,5 +129,4 @@ else:
   print(f"\033[92m✅ No new tracks found. Existing ones stored at either \"{tracks_dir}\" or \"{archive_dir}\"\033[0m")
 
 #TODO: 
-#! - Make Archive hardcode a config parameter
-#! - Support setting the workouts config path to wherever we wish
+#! - Make "Archive" hardcode a config parameter
