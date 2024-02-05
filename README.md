@@ -4,19 +4,20 @@ This tool will `export all workouts from strava onto a folder`, then `extract ea
 
 ## Motivation
 
-Strava will only provide batch downloads of **ALL** of an user account's contents at once, which is inconvenient since we may only wish to downloads workouts and its tracks.
+Strava will only provide batch downloads of **ALL** of an user account's contents at once, which is inconvenient since we may only wish to download workouts and its tracks.
 
 Hence, I decided to write this tool so I could sync those workouts to other apps and do some backups as well.
 
 ## Features
 
 - `Oauth flow support`: Implements strava's oauth, saving the pain of having to do all sort of things to get a proper token.
-- `Platforms supported`: Meant to be run on either **🍎 MacOS**, **🐧 Linux**.
+- `Multiple platforms supported`: Meant to be run on either **🍎 MacOS**, **🐧 Linux**.
 - `Ratelimiting support`: This tool respects [strava's rate-limits](https://developers.strava.com/docs/rate-limits/)
   - **15m ratelimiter**: It'll pause and then resume as the ratelimiter resets.
-  - **Daily ratelimiter**: The tool will move on to the next step and extract tracks from all already downloaded workouts. You may run it again the next day to finish with remaining downloads.
+  - **Daily ratelimiter**: The tool will move on to the next step and extract tracks from all already downloaded workouts. You may run it again the next day to finish downloading your data.
 - `Resume capability`: You can stop it (*^C*), then resume from where it left at any time.
-- `Custom tracks output folder`: Useful if you wish to store them somewhere else, like `Google Drive`, `Dropbox`, a `network or external drive`, etc. This can also be used so those are picked up for importing by other apps, like [🌎 Fog of World's track sync](https://medium.com/p/b29f73172b7e).
+- `Idempotence`: It'll skip workouts already downloaded, and ensure your already-downloaded workouts always reflect what's on your strava account. Hence, any changes to already-downloaded workouts on strava will be synced to your local.
+- `Custom tracks output folder`: Useful if you wish to store tracks somewhere else, like `Google Drive`, `Dropbox`, a `network or external drive`, etc. This can also be used so those are picked up for importing by other apps, like [🌎 Fog of World's track sync](https://medium.com/p/b29f73172b7e).
 
 ## Prerequisites
 
