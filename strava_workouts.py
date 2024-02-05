@@ -1,5 +1,5 @@
 import requests, json, polyline, gpxpy, gpxpy.gpx, os
-from helpers import misc_functions as misc
+from helpers import misc_functions as helpers
 
 class strava_workouts:
   def get_workout_list(access_token: str) -> list:
@@ -15,7 +15,7 @@ class strava_workouts:
       status_code = activities_response.status_code
 
       if status_code == 429:
-        misc.wait_for_it()
+        helpers.wait_for_it()
 
         continue
       elif status_code == 500:
@@ -60,7 +60,7 @@ class strava_workouts:
 
     for key in workout_list.keys():
       value = workout_list[key]
-      output_file = f'{workdir}/{key}-{misc.sanitize_filename(value)}.json'
+      output_file = f'{workdir}/{key}-{helpers.sanitize_filename(value)}.json'
 
       if not os.path.isfile(output_file):
 
@@ -85,7 +85,7 @@ class strava_workouts:
             downloaded += 1
 
           case 429: # Hit ratelimiter
-            misc.wait_for_it(f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
+            helpers.wait_for_it(f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
             workout = strava_workouts.get_workout(key, access_token=access_token)
             with open(output_file, 'w') as f:
               f.write(json.dumps(workout, indent=2))

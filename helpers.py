@@ -1,4 +1,4 @@
-import re, time, emoji
+import re, time, emoji, os
 
 class misc_functions:
   def welcome():
@@ -29,3 +29,9 @@ class misc_functions:
       print(f"\033[33m⏰ Rate limit exceeded. Sleeping for {x} seconds  \033[0m", end='\r', flush=True)
       time.sleep(1)
     print("\n")
+
+  def is_duplicate(paths: list, filename: str) -> bool:
+    for path in paths:
+      if os.path.isfile(f"{path}/{filename}"):
+        return True
+    return False
