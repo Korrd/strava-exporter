@@ -2,7 +2,27 @@ import requests, json, polyline, gpxpy, gpxpy.gpx, os
 from helpers import misc_functions as helpers
 
 class strava_workouts:
+  """
+  #### Description
+  This class provides methods and functions for downloading, converting and storing strava workouts and tracks
+  #### Available functions.
+  - `decode_polyline(pline: str)`: decodes a polyline and returns a list of coordinates
+  - `download_all_workouts(workdir: str, workout_list: dict, access_token: str) -> bool`: implements the get_workout function and downloads all workouts that are still unsaved on the workouts dir
+  - `get_files(workdir: str) -> dict`: from a filename where the left part of its "-" represents the strava workout id, and the right part the workout name, returns a dict where its key is the workout id and its content the full filename
+  - `get_workout(workout_id: str, access_token: str) -> dict`: retrieves a full workout from strava
+  - `get_workout_list(access_token: str) -> list`: gets strava's user workout index
+  - `write_gpx_from_polyline(coordinates, output_file: str)`: writes a gpx file to disc from a decoded polyline
+  """
+
   def get_workout_list(access_token: str) -> list:
+    """
+    #### Description
+    Gets strava's user workout index
+    #### Parameters
+    - `access_token`: strava's access token
+    #### Returns
+    An index of workouts
+    """
     result = []
     page_limit = 200
     headers = {'Authorization': f'Bearer {access_token}'}
@@ -40,20 +60,37 @@ class strava_workouts:
     return result
 
   def get_workout(workout_id: str, access_token: str) -> dict:
+    """
+    #### Description
+    Retrieves a full workout from strava
+    #### Parameters
+    - `access_token`: strava's access token
+    - `workout_id`: workout ID of the workout to be retrieved 
+    #### Returns
+    A dict containing the workout's data
+    """
     api_url = f"https://www.strava.com/api/v3/activities/{workout_id}"
     headers = {'Authorization': f'Bearer {access_token}'}
 
     response = requests.get(api_url, headers=headers)
-
     if response.status_code == 200:
       workout_data = response.json()
-      # with open(f'workout_{workout_id}.json', 'w') as f:
-      return workout_data # json.dump(workout_data, f, indent=2)
+      return workout_data
 
     else:
       return {}
 
   def download_all_workouts(workdir: str, workout_list: dict, access_token: str) -> bool:
+    """
+    #### Description
+    Implements the get_workout function and downloads all workouts that are still unsaved on the workouts dir.
+    #### Parameters
+    - `access_token`: strava's access token
+    - `workdir`: working directory where our workouts will be stored
+    - `workout_list`: a list of workout IDs
+    #### Returns
+    `True` if successful, `False` otherwise
+    """
     headers = {'Authorization': f'Bearer {access_token}'}
     skipped = 0
     downloaded = 0
@@ -114,21 +151,39 @@ class strava_workouts:
     return True
 
   def get_files(workdir: str) -> dict:
+    """
+    #### Description
+    From a filename where the left part of its "-" represents the strava `workout ID`, and the right part the `workout name`, returns a dict where its key is the `workout ID` and its value the `full filename`
+    #### Parameters
+    - `workdir`: working directory where our workout files are currently stored
+    #### Returns
+    A `dict` where its `key` is the `workout ID` and its `value` the `full filename`
+    """
     result = {}
-
     for filename in os.listdir(workdir):
-      parts = filename.split("-", 1)
-      key = parts[0].strip()
-      value = filename
-      result[key] = value
+      workout_id = filename.split("-", 1)[0].strip()
+      result[workout_id] = filename
 
     return result
 
   def decode_polyline(pline: str):
-    # Decode a polyline string and return a list of coordinates (latitude, longitude)
+    """
+    #### Description
+    Decodes a polyline into a set of coordinates
+    #### Parameters
+    - `pline`: polyline to be decoded
+    #### Returns
+    A set of coordinates
+    """
     return polyline.decode(pline)
 
   def write_gpx_from_polyline(coordinates, output_file: str):
+    """
+    #### Description
+    Writes a gpx file to disc from a decoded polyline
+    #### Parameters
+    - `coordinates`: a set of coordinates provided by the `decode_polyline` function
+    """
     # Create a GPX file with the given coordinates
     gpx = gpxpy.gpx.GPX()
 
