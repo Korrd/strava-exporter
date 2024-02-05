@@ -15,7 +15,8 @@ Hence, I decided to write this tool so I could sync those workouts to other apps
 - `Ratelimiting support`: This tool respects [strava's rate-limits](https://developers.strava.com/docs/rate-limits/)
   - **15m ratelimiter**: It'll pause and then resume as the ratelimiter resets.
   - **Daily ratelimiter**: The tool will move on to the next step and extract tracks from all already downloaded workouts. You may run it again the next day to finish with remaining downloads.
-- `Resume capability`: You can stop it (*^C*) and continue at any time.
+- `Resume capability`: You can stop it (*^C*), then resume from where it left at any time.
+- `Custom tracks output folder`: Useful if you wish to store them somewhere else, like `Google Drive`, `Dropbox`, a `network or external drive`, etc. This can also be used so those are picked up for importing by other apps, like [🌎 Fog of World's track sync](https://medium.com/p/b29f73172b7e).
 
 ## Prerequisites
 
@@ -34,11 +35,11 @@ pip install -r requirements.txt
 
 - Get the `Client ID` & `Secret` values from strava's at its [API config page](https://www.strava.com/settings/api). If no API app is set, you can create a new one [following these instructions](https://developers.strava.com/docs/getting-started/#account)
 
-- Just run the tool from `run.py`, providing `Client ID` and `Secret` when asked, then wait for it. 
+- Just run the tool from `run.py`, providing `Client ID` and `Secret` and any other parameters when asked, then wait for it.
 
   - Retrieved workouts can be found on the [workouts](./workouts/) folder, **in json format** & with all its metadata intact.
-  - All `extracted tracks` will be saved to the [tracks](./tracks/) folder **in gpx format**. These come from each workout [polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm).
+  - All `extracted tracks` will be saved to either the [tracks](./tracks/) or custom-set folder **in gpx format**. These come from each workout [polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm).
 
 ## Collaborating
 
-See [Contributing](./CONTRIBUTING.md)
+Pull requests are welcome. For more info, see the [Contributing](./CONTRIBUTING.md) file.
