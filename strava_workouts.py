@@ -32,24 +32,28 @@ class strava_workouts:
 
     while do_download:
       activities_url = f'https://www.strava.com/api/v3/athlete/activities?page={page_number}&per_page={page_limit}'
-      activities_response = requests.get(activities_url, headers=headers)
-      status_code = activities_response.status_code
+      response = requests.get(activities_url, headers=headers)
+      status_code = response.status_code
 
       if status_code == 429:
-        _, lim_daily, _, u_daily = helpers.get_rate_limits(res=activities_response)
+        _, lim_daily, _, u_daily = helpers.get_rate_limits(res=response)
 
         if u_daily >= lim_daily: # Hit daily ratelimit
-          print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again.\033[0m")
+          print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again.")
           exit(1)
         else:
           helpers.wait_for_it()
 
         continue
       elif status_code == 500:
-        print(f"💥 Encountered a \"500 - internal server error\" while retrieving activities list. Aborting :(")
-        exit(1)
+        if workout_index == []:
+          print(f"\033[93m💥 Encountered an internal server error while retrieving the activities' list. Aborting, since no list was retrieved.\033[0m")
+          exit(1)
+        else:
+          print(f"\033[93m💥 Encountered an internal server error while retrieving the activities' list. Moving on with what we've got.\n  \033[0mYou may want to re-run this script later on to retrieve the rest of it.")
+          break
 
-      activities = activities_response.json()
+      activities = response.json()
       if len(activities) == 0:
         do_download = False
       else:
