@@ -100,9 +100,24 @@ class config:
     return input(prompt)
 
   def get_downloaded_workouts(db_file: str) -> dict:
+    """
+    #### Description
+    Loads the downloaded workouts database from its JSON file and returns it as a dict
+    #### Parameters
+    - `db_file`: full path to the db file
+    #### Returns
+    A dict containing all of the already-downloaded workouts
+    """
     with open(db_file, mode="r") as f:
       return json.loads(f.read())
 
   def write_downloaded_workouts(db_file: str, workout_db: dict):
+    """
+    #### Description
+    Writes the downloaded workouts to its JSON file from a dict
+    #### Parameters
+    - `db_file`: full path to the db file
+    - `workout_db`: the object containing the downloaded workouts
+    """
     with open(db_file, mode="w") as f:
       f.write(json.dumps(workout_db))
