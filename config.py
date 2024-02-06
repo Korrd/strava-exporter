@@ -5,10 +5,12 @@ class config:
   #### Description
   This class provides functions and methods related to app config.
   #### Available functions
-  - `ask_for_tracks_output_path()`: asks for a path where to store extracted tracks
+  - `ask_for_path(message: str, prompt: str) -> str`: asks the user for a directory path
   - `read_config_file(config_file: str) -> str`: reads the app's config file from disk
+  - `read_downloaded_workouts(db_file: str) -> dict`: loads the downloaded workouts database from its JSON file and returns it as a dict
   - `read_secrets_file(secrets_file: str) -> list`: reads the app's secrets file from disk
   - `write_config_file(config_file: str, tracks_output_path: str)`: writes the app's config file to disk
+  - `write_downloaded_workouts(db_file: str, workout_db: dict)`: writes the downloaded workouts to its JSON file from a dict
   - `write_secrets_file(secrets_file: str, strava_client_id: str = "", strava_client_secret: str = "", strava_access_token: str = "", strava_refresh_token: str = "")`: writes the app's secrets file to disk 
   """
   def read_secrets_file(secrets_file: str) -> list:
@@ -89,7 +91,7 @@ class config:
   def ask_for_path(message: str, prompt: str) -> str:
     """
     #### Description
-    Asks for a path where to store extracted tracks
+    Asks the user for a directory path
     #### Parameters
     - `message`: message to show to the user
     - `prompt`: prompt for the input box
@@ -99,7 +101,7 @@ class config:
     print(message)
     return input(prompt)
 
-  def get_downloaded_workouts(db_file: str) -> dict:
+  def read_downloaded_workouts(db_file: str) -> dict:
     """
     #### Description
     Loads the downloaded workouts database from its JSON file and returns it as a dict

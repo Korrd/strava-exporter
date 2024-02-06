@@ -6,6 +6,7 @@ class misc_functions:
   #### Description
   This class provides miscelaneous helper functions and methods.
   #### Available functions
+  - `get_rate_limits(res: requests.Response) -> list`: returns strava's rate limits and usage quota from a given requests' response
   - `is_duplicate(paths: list, filename: str) -> bool`: checks if a file already exists on any of the given paths
   - `sanitize_filename(filename: str) -> str`: sanitizes a string so it can become a valid filename
   - `wait_for_it(extra_message: str = "")`: waits for a set amount of time, while printing a message letting the user know how much time is left in seconds
@@ -96,7 +97,7 @@ class misc_functions:
   def get_rate_limits(res: requests.Response) -> list:
     """
     #### Description
-    Gets the rate limits from strava's ratelimit headers
+    Returns strava's rate limits and usage quota from a given requests' response
     #### Parameters
     - `res`: the response of an HTTP request that contains the ratelimit headers
     #### Returns

@@ -39,7 +39,7 @@ if not os.path.exists(workout_db_file):
   with open(workout_db_file, mode="w") as f:
     f.write(json.dumps(downloaded_workouts_db))
 else:
-  downloaded_workouts_db = config.get_downloaded_workouts(db_file=workout_db_file)
+  downloaded_workouts_db = config.read_downloaded_workouts(db_file=workout_db_file)
 
 if not os.path.exists(secrets_file):
   # There's no secrets file. Ask user for client ID & Secret
