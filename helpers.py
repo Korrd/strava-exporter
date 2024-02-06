@@ -1,4 +1,4 @@
-import re, time, emoji, os
+import re, time, emoji, os, requests
 from datetime import datetime
 
 class misc_functions:
@@ -92,3 +92,16 @@ class misc_functions:
       if os.path.isfile(f"{path}/{filename}"):
         return True
     return False
+
+  def get_rate_limits(res: requests.Response) -> list:
+    """
+    #### Description
+    Gets the rate limits from strava's ratelimit headers
+    #### Parameters
+    - `res`: the response of an HTTP request that contains the ratelimit headers
+    #### Returns
+    A `list(int)` containing the values for [`15-minute ratelimit`, `daily ratelimit`, `15-minute usage`, `daily usage`]
+    """
+    lim_15, lim_daily = map(int, res.headers._store['x-ratelimit-limit'][1].split(","))
+    u_15, u_daily = map(int, res.headers._store['x-ratelimit-usage'][1].split(","))
+    return lim_15, lim_daily, u_15, u_daily

@@ -36,7 +36,13 @@ class strava_workouts:
       status_code = activities_response.status_code
 
       if status_code == 429:
-        helpers.wait_for_it()
+        _, lim_daily, _, u_daily = helpers.get_rate_limits(res=activities_response)
+
+        if u_daily >= lim_daily: # Hit daily ratelimit
+          print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again.\033[0m")
+          exit(1)
+        else:
+          helpers.wait_for_it()
 
         continue
       elif status_code == 500:
@@ -113,10 +119,7 @@ class strava_workouts:
 
       response = requests.get(api_url, headers=headers)
 
-      # [15min-limit, daily-limit]
-      lim_15, lim_daily = map(int, response.headers._store['x-ratelimit-limit'][1].split(","))
-      # [15min-limit-usage, daily-limit-usage]
-      u_15, u_daily = map(int, response.headers._store['x-ratelimit-usage'][1].split(","))
+      lim_15, lim_daily, u_15, u_daily = helpers.get_rate_limits(res=response)
 
       if u_daily >= lim_daily: # Hit daily ratelimit
         print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again. \n   \033[92mIn the meantime, processing what we have...\033[0m")
