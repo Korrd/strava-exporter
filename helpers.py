@@ -62,8 +62,8 @@ class misc_functions:
       print(f"\033[33m⏰ {extra_message}\033[0m")
 
     # Get seconds to wait for ratelimiter to reset
-    reset_seconds = [900, 1800, 2700, 3600]
-    current_seconds = (60 if datetime.now().minute == 0 else datetime.now().minute) * 60
+    reset_seconds = [900, 1800, 2700, 3601]
+    current_seconds = datetime.now().second + (60 if datetime.now().minute == 0 else datetime.now().minute) * 60
     for reset_point in reset_seconds:
       result = current_seconds / reset_point
       if result <= 1:
@@ -72,7 +72,7 @@ class misc_functions:
 
     # Wait for ratelimiter to reset
     for x in range(time_wait, 0, -1):
-      print(f"\033[33m⏰ Rate limit exceeded. Sleeping for {x} seconds  \033[0m", end='\r', flush=True)
+      print(f"\033[33m⏰ Rate limit exceeded. Sleeping for {x} second{'' if x == 1 else 's'}  \033[0m", end='\r', flush=True)
       time.sleep(1)
     print("\n")
 

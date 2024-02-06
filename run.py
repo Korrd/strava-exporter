@@ -103,12 +103,12 @@ filelist = strava.get_files(workdir=workouts_dir)
 
 skipped = 0
 extracted = 0
+archive_dir = f"{tracks_dir}/Archive"
 for key in filelist.keys():
 
   if str(filelist[key]).endswith(".json"):
     gpx_file = filelist[key].replace('.json', '.gpx')
     gpx_filename = f"{tracks_dir}/{gpx_file}"
-    archive_dir = f"{tracks_dir}/Archive"
 
     if not (helpers.is_duplicate(paths=[tracks_dir, archive_dir], filename=gpx_file)):
       with open(f"{workouts_dir}/{filelist[key]}", mode="r") as f:
