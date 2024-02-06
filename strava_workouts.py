@@ -15,7 +15,7 @@ class strava_workouts:
   - `write_gpx_from_polyline(coordinates, output_file: str)`: writes a gpx file to disc from a decoded polyline
   """
 
-  def get_workout_list(access_token: str) -> list:
+  def get_workout_list(access_token: str) -> dict:
     """
     #### Description
     Gets strava's user workout index
@@ -24,7 +24,7 @@ class strava_workouts:
     #### Returns
     An index of workouts
     """
-    result = []
+    workout_index = []
     page_limit = 200
     headers = {'Authorization': f'Bearer {access_token}'}
     page_number = 1
@@ -57,13 +57,14 @@ class strava_workouts:
         page_number += 1
 
       for activity in activities:
-        result.append([activity["id"], activity["name"]])
+        workout_index.append([activity["id"], activity["name"]])
 
-    print(f"\n\033[94mℹ️  Got {len(result)} activities. Retrieving them...\033[0m")
-    if len(result) >= 2000:
+    print(f"\n\033[94mℹ️  Got {len(workout_index)} activities. Retrieving them...\033[0m")
+    if len(workout_index) >= 2000:
       print("\n\033[93m🚦 Since the activity count is greater than strava's daily ratelimit of 2000,\033[0m")
       print("\033[93m🚦 you may have to run this script again tomorrow to finish.\n\033[0m")
 
+    result = {x[0]: x[1] for x in workout_index}
     return result
 
   def get_workout(workout_id: str, access_token: str) -> dict:

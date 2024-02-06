@@ -87,8 +87,7 @@ print("\033[92m🔐 Authentication successful!\n\033[0m")
 #endregion
 
 # Get full workouts' list to download
-workout_list = {x[0]: x[1] \
-                for x in strava.get_workout_list(access_token=strava_access_token)}
+workout_list = strava.get_workout_list(access_token=strava_access_token)
 
 # Download all workouts
 strava.download_all_workouts(workdir=workouts_dir, \
