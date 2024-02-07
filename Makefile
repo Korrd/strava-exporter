@@ -1,5 +1,5 @@
 build:
-	pipreqs --force
+	pipreqs --force --mode compat
 
 clean:
 	rm -rf __pycache__
