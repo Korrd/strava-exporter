@@ -61,8 +61,6 @@ class strava_workouts:
         else:
           print("\033[93m💥 Encountered an internal server error while retrieving the activities' list. Moving on with what we've got.\n  \033[0mYou may want to re-run this script later on to retrieve the rest of it.")
           break
-      else:
-        print(f"🚫 Unexpected status code ({response.status_code}) while retrieving workout list")
 
       activities = response.json()
       if len(activities) == 0:
@@ -88,7 +86,7 @@ class strava_workouts:
     Retrieves a full workout from strava
     #### Parameters
     - `access_token`: strava's access token
-    - `workout_id`: workout ID of the workout to be retrieved 
+    - `workout_id`: workout ID of the workout to be retrieved
     #### Returns
     A dict containing the workout's data
     """

@@ -9,3 +9,6 @@ run:
 
 setup: requirements.txt
 	pip install -r requirements.txt
+
+lint:
+	pylint *.py
