@@ -13,10 +13,10 @@ workout_db_file = f"{workdir}/temp/downloaded_workouts.json"
 strava_access_token, strava_refresh_token = "", ""
 
 if not os.path.exists(config_file):
-  tracks_dir = config.ask_for_path(message="\033[93m⚠️  [Optional] Please, provide a full path to a folder to store your tracks on",
+  tracks_dir = config.ask_for_path(message="\033[93m⚠️  [Optional] Please, provide a full path to a folder for storing your tracks on",
                                     prompt="\033[95m📂 Tracks Folder: \033[0m")
 
-  workouts_dir = config.ask_for_path(message="\033[93m⚠️  [Optional] Please, provide a full path to a folder to store your workouts on",
+  workouts_dir = config.ask_for_path(message="\033[93m⚠️  [Optional] Please, provide a full path to a folder for storing your workouts on",
                                     prompt="\033[95m📂 Workouts Folder: \033[0m")
 
   if tracks_dir == "":
