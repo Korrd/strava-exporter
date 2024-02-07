@@ -1,8 +1,12 @@
-import requests, os, getpass as g
+"""
+This module contains all functions related to strava's oauth flow
+"""
+import os
+import getpass as g
 from urllib.parse import urlencode
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from webbrowser import open_new_tab
-
+import requests
 class strava_oauth:
   """
   #### Description
@@ -24,7 +28,7 @@ class strava_oauth:
     #### Notes
     Interactive function. It'll open a browser tab asking the used to authorize this app for read access
     """
-    with open(f"{os.path.dirname(os.path.realpath(__file__))}/oauth_success.htm") as file:
+    with open(f"{os.path.dirname(os.path.realpath(__file__))}/oauth_success.htm", encoding="utf8") as file:
       html_code = bytes("".join(file.readlines()), "utf-8")
 
     # Step 1: Get Authorization Code
@@ -35,12 +39,17 @@ class strava_oauth:
     open_new_tab(auth_url)
 
     class RequestHandler(BaseHTTPRequestHandler):
+      """
+      Request handler for user reply on oauth flow
+      """
       def log_message(self, format, *args):
-          # Suppress logging by overriding the log_message method
-          pass
+        # Suppress logging by overriding the log_message method
+        pass
 
       def do_GET(self) -> str:
-        # Parse authorization code from the redirect URI
+        """
+        Parses authorization code from the redirect URI
+        """
         code = self.path.split('code=')[1].split("&")[0]
         # Exchange Authorization Code for Access Token
         token_url = 'https://www.strava.com/oauth/token'
@@ -50,7 +59,7 @@ class strava_oauth:
           'code': code,
           'grant_type': 'authorization_code'
         }
-        response = requests.post(token_url, data=payload)
+        response = requests.post(token_url, data=payload, timeout=60)
         if response.status_code != 200:
           self.server.access_token = ""
           self.server.refresh_token = ""
@@ -69,7 +78,7 @@ class strava_oauth:
     server = HTTPServer(('localhost', 8000), RequestHandler)
     server.handle_request()
     return server.access_token, server.refresh_token
-  
+
   def refresh_access_token(client_id: str, client_secret: str, refresh_token: str) -> str:
     """
     #### Description
@@ -89,14 +98,13 @@ class strava_oauth:
       'grant_type': 'refresh_token'
     }
 
-    response = requests.post(token_url, data=payload)
+    response = requests.post(token_url, data=payload, timeout=60)
 
     if response.status_code == 200:
       access_token = response.json().get('access_token')
       return access_token
-    else:
-      print(f"Error refreshing access token: {response.status_code}, {response.text}")
-      return ""
+    print(f"Error refreshing access token: {response.status_code}, {response.text}")
+    return ""
 
   def check_access_token(access_token: str) -> bool:
     """
@@ -110,12 +118,11 @@ class strava_oauth:
     check_url = 'https://www.strava.com/api/v3/athlete'
     headers = {'Authorization': f'Bearer {access_token}'}
 
-    response = requests.get(check_url, headers=headers)
+    response = requests.get(check_url, headers=headers, timeout=60)
 
     if response.status_code == 200:
       return True
-    else:
-      return False
+    return False
 
   def ask_for_secrets() -> list:
     """

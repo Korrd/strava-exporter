@@ -1,5 +1,10 @@
-import os, json
-from strava_oauth import strava_oauth as strava_oauth
+"""
+Main file
+"""
+import sys
+import json
+import os
+from strava_oauth import strava_oauth
 from strava_workouts import strava_workouts as strava
 from helpers import misc_functions as helpers
 from config import config
@@ -36,7 +41,7 @@ else:
 
 if not os.path.exists(workout_db_file):
   downloaded_workouts_db = {}
-  with open(workout_db_file, mode="w") as f:
+  with open(workout_db_file, mode="w", encoding="utf8") as f:
     f.write(json.dumps(downloaded_workouts_db))
 else:
   downloaded_workouts_db = config.read_downloaded_workouts(db_file=workout_db_file)
@@ -46,14 +51,14 @@ if not os.path.exists(secrets_file):
   strava_client_id, strava_client_secret = strava_oauth.ask_for_secrets()
   if strava_client_secret == "" or strava_client_id == "":
     print("\033[91m❌ Either strava's \"Client Secret\" or \"Client ID\" provided are empty. Check them, then try again.\033[0m")
-    exit(1)
+    sys.exit(1)
   else:
     # Write client info to secrets file
     config.write_secrets_file(secrets_file=secrets_file, \
                             strava_client_id=strava_client_id, \
                             strava_client_secret=strava_client_secret)
 
-else: 
+else:
   # Get all credentials from file
   strava_access_token, \
   strava_refresh_token, \
@@ -75,7 +80,7 @@ if strava_access_token == "":
   # If at this point we still have no access token, we've failed and can't do anything about it,
   # so we exit with error
   print("\033[91m❌ Unable to retrieve tokens. Check provided strava's \"Client ID\" & \"Secret\", then try again\033[0m")
-  exit(1)
+  sys.exit(1)
 else:
   config.write_secrets_file(secrets_file=secrets_file, \
                           strava_client_id=strava_client_id, \
@@ -109,8 +114,8 @@ for key in filelist.keys():
     gpx_file = filelist[key].replace('.json', '.gpx')
     gpx_filename = f"{tracks_dir}/{gpx_file}"
 
-    if not (helpers.is_duplicate(paths=[tracks_dir, archive_dir], filename=gpx_file)):
-      with open(f"{workouts_dir}/{filelist[key]}", mode="r") as f:
+    if not helpers.is_duplicate(paths=[tracks_dir, archive_dir], filename=gpx_file):
+      with open(f"{workouts_dir}/{filelist[key]}", mode="r", encoding="utf8") as f:
         workout = json.load(f)
       track = strava.decode_polyline(workout['map']['polyline'])
       strava.write_gpx_from_polyline(coordinates=track, output_file=gpx_filename)
@@ -127,5 +132,5 @@ if extracted != 0:
 else:
   print(f"\033[92m✅ No new tracks found. Existing ones stored at either \"{tracks_dir}\" or \"{archive_dir}\"\033[0m")
 
-#TODO: 
+#TODO:
 #! - Make "Archive" hardcode a config parameter
