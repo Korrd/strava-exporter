@@ -21,10 +21,10 @@ Hence, I decided to write this tool so I could sync those workouts to other apps
 
 ## Prerequisites
 
-If needed, install all required packages described on the `requirements.txt` file using pip as follows:
+If needed, install all required packages described on the `requirements.txt` file as follows:
 
 ```bash
-pip install -r requirements.txt
+make setup
 ```
 
 ## Usage
@@ -36,7 +36,7 @@ pip install -r requirements.txt
 
 - Get the `Client ID` & `Secret` values from strava's at its [API config page](https://www.strava.com/settings/api). If no API app is set, you can create a new one [following these instructions](https://developers.strava.com/docs/getting-started/#account)
 
-- Just run the tool from `run.py`, providing `Client ID` and `Secret` and any other parameters when asked, then wait for it.
+- Just run the tool by doing `make run`, providing `Client ID` and `Secret` and any other parameters when asked, then wait for it.
 
   - Retrieved workouts can be found on the [workouts](./workouts/) folder, **in json format** & with all its metadata intact.
   - All `extracted tracks` will be saved to either the [tracks](./tracks/) or custom-set folder **in gpx format**. These come from each workout [polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm).
