@@ -1,4 +1,13 @@
-import requests, json, polyline, gpxpy, gpxpy.gpx, os
+"""
+This module provides the strava_workouts class, meant to work with strava workouts.
+"""
+import sys
+import json
+import os
+import gpxpy
+import gpxpy.gpx
+import polyline
+import requests
 from helpers import misc_functions as helpers
 from config import config
 
@@ -32,7 +41,7 @@ class strava_workouts:
 
     while do_download:
       activities_url = f'https://www.strava.com/api/v3/athlete/activities?page={page_number}&per_page={page_limit}'
-      response = requests.get(activities_url, headers=headers)
+      response = requests.get(activities_url, headers=headers, timeout=60)
       status_code = response.status_code
 
       if status_code == 429:
@@ -40,18 +49,20 @@ class strava_workouts:
 
         if u_daily >= lim_daily: # Hit daily ratelimit
           print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again.")
-          exit(1)
+          sys.exit(1)
         else:
           helpers.wait_for_it()
+        # continue
 
-        continue
       elif status_code == 500:
         if workout_index == []:
-          print(f"\033[93m💥 Encountered an internal server error while retrieving the activities' list. Aborting, since no list was retrieved.\033[0m")
-          exit(1)
+          print("\033[93m💥 Encountered an internal server error while retrieving the activities' list. Aborting, since no list was retrieved.\033[0m")
+          sys.exit(1)
         else:
-          print(f"\033[93m💥 Encountered an internal server error while retrieving the activities' list. Moving on with what we've got.\n  \033[0mYou may want to re-run this script later on to retrieve the rest of it.")
+          print("\033[93m💥 Encountered an internal server error while retrieving the activities' list. Moving on with what we've got.\n  \033[0mYou may want to re-run this script later on to retrieve the rest of it.")
           break
+      else:
+        print(f"🚫 Unexpected status code ({response.status_code}) while retrieving workout list")
 
       activities = response.json()
       if len(activities) == 0:
@@ -84,13 +95,11 @@ class strava_workouts:
     api_url = f"https://www.strava.com/api/v3/activities/{workout_id}"
     headers = {'Authorization': f'Bearer {access_token}'}
 
-    response = requests.get(api_url, headers=headers)
+    response = requests.get(api_url, headers=headers, timeout=60)
     if response.status_code == 200:
       workout_data = response.json()
       return workout_data
-
-    else:
-      return {}
+    return {}
 
   def download_all_workouts(workdir: str,
                             workout_list: dict,
@@ -122,7 +131,7 @@ class strava_workouts:
 
       api_url = f"https://www.strava.com/api/v3/activities/{key}"
 
-      response = requests.get(api_url, headers=headers)
+      response = requests.get(api_url, headers=headers, timeout=60)
 
       lim_15, lim_daily, u_15, u_daily = helpers.get_rate_limits(res=response)
 
@@ -133,7 +142,7 @@ class strava_workouts:
 
       match response.status_code:
         case 200: # Success!
-          with open(output_file, 'w') as f:
+          with open(output_file, 'w', encoding="utf8") as f:
             json.dump(response.json(), f, indent=2)
           print(f"💾 Retrieving \033[1;90m{value}\033[0m")
           downloaded += 1
@@ -143,7 +152,7 @@ class strava_workouts:
         case 429: # Hit ratelimiter
           helpers.wait_for_it(f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
           workout = strava_workouts.get_workout(key, access_token=access_token)
-          with open(output_file, 'w') as f:
+          with open(output_file, 'w', encoding="utf8") as f:
             f.write(json.dumps(workout, indent=2))
           print(f"💾 Retrieving \033[1;90m{value}\033[0m")
           downloaded += 1
@@ -211,7 +220,7 @@ class strava_workouts:
 
     # Add points to the segment
     for lat, lon in coordinates:
-        segment.points.append(gpxpy.gpx.GPXTrackPoint(latitude=lat, longitude=lon))
+      segment.points.append(gpxpy.gpx.GPXTrackPoint(latitude=lat, longitude=lon))
 
     # Add the segment to the track
     track.segments.append(segment)
@@ -220,5 +229,5 @@ class strava_workouts:
     gpx.tracks.append(track)
 
     # Write the GPX data to the output file
-    with open(output_file, 'w') as f:
-        f.write(gpx.to_xml())
+    with open(output_file, 'w', encoding="utf8") as f:
+      f.write(gpx.to_xml())

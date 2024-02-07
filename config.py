@@ -1,5 +1,7 @@
+"""
+Configuration module, containing the config class.
+"""
 import json
-
 class config:
   """
   #### Description
@@ -23,18 +25,12 @@ class config:
     - A list containing all of the app's secrets
     #### Notes
     """
-    with open(secrets_file, mode="r") as f:
-      config = json.loads(f.read())
-      if 'access_token' in config.keys():
-        return config['access_token'], \
-              config['refresh_token'], \
-              config['client_id'], \
-              config['client_secret']
-      else:
-        return config['strava_access_token'], \
-              config['strava_refresh_token'], \
-              config['strava_client_id'], \
-              config['strava_client_secret']
+    with open(secrets_file, mode="r", encoding="utf8") as f:
+      conf = json.loads(f.read())
+      return conf['strava_access_token'], \
+            conf['strava_refresh_token'], \
+            conf['strava_client_id'], \
+            conf['strava_client_secret']
 
   def write_secrets_file(secrets_file: str,
                         strava_client_id: str = "",
@@ -51,13 +47,13 @@ class config:
     - `strava_access_token`: strava's access token
     - `strava_refresh_token`: strava's refresh token 
     """
-    with open(secrets_file, mode="w") as f:
-      config = {}
-      config['strava_access_token'] = strava_access_token
-      config['strava_refresh_token'] = strava_refresh_token
-      config['strava_client_id'] = strava_client_id
-      config['strava_client_secret'] = strava_client_secret
-      f.write(json.dumps(config))
+    with open(secrets_file, mode="w", encoding="utf8") as f:
+      conf = {}
+      conf['strava_access_token'] = strava_access_token
+      conf['strava_refresh_token'] = strava_refresh_token
+      conf['strava_client_id'] = strava_client_id
+      conf['strava_client_secret'] = strava_client_secret
+      f.write(json.dumps(conf))
 
   def read_config_file(config_file: str) -> str:
     """
@@ -69,9 +65,9 @@ class config:
     - `tracks_output_path`: a path where extracted tracks will be stored, user-provided
     #### Notes
     """
-    with open(config_file, mode="r") as f:
-      config = json.loads(f.read())
-      return config['tracks_output_path'], config['workouts_output_path']
+    with open(config_file, mode="r", encoding="utf8") as f:
+      conf = json.loads(f.read())
+      return conf['tracks_output_path'], conf['workouts_output_path']
 
   def write_config_file(config_file: str, tracks_output_path: str, workouts_output_path: str):
     """
@@ -82,11 +78,11 @@ class config:
     - `tracks_output_path`: a path where extracted tracks will be stored, user-provided
     - `workouts_output_path`: a path where extracted workouts will be stored, user-provided
     """
-    config = {}
-    config['tracks_output_path'] = tracks_output_path
-    config['workouts_output_path'] = workouts_output_path
-    with open(config_file, mode="w") as f:
-      f.write(json.dumps(config))
+    conf = {}
+    conf['tracks_output_path'] = tracks_output_path
+    conf['workouts_output_path'] = workouts_output_path
+    with open(config_file, mode="w", encoding="utf8") as f:
+      f.write(json.dumps(conf))
 
   def ask_for_path(message: str, prompt: str) -> str:
     """
@@ -110,7 +106,7 @@ class config:
     #### Returns
     A dict containing all of the already-downloaded workouts
     """
-    with open(db_file, mode="r") as f:
+    with open(db_file, mode="r", encoding="utf8") as f:
       return json.loads(f.read())
 
   def write_downloaded_workouts(db_file: str, workout_db: dict):
@@ -121,5 +117,5 @@ class config:
     - `db_file`: full path to the db file
     - `workout_db`: the object containing the downloaded workouts
     """
-    with open(db_file, mode="w") as f:
+    with open(db_file, mode="w", encoding="utf8") as f:
       f.write(json.dumps(workout_db))

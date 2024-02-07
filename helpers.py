@@ -1,5 +1,12 @@
-import re, time, emoji, os, requests
+"""
+Helper module, containing misc functions
+"""
 from datetime import datetime
+import os
+import re
+import time
+import emoji
+import requests
 
 class misc_functions:
   """
