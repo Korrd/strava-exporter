@@ -29,16 +29,20 @@ make setup
 
 ## Usage
 
-<video width="640" controls autoplay>
-  <source src="https://raw.githubusercontent.com/Korrd/strava-exporter/main/img/strava-exporter.mp4" type="video/mp4">
+<!-- <video width="640" controls autoplay> -->
+<!-- <source src="https://raw.githubusercontent.com/Korrd/strava-exporter/main/img/strava-exporter.mp4" type="video/mp4">
   Your browser does not support the video tag.
-</video>
+</video> -->
 
 - Get the `Client ID` & `Secret` values from strava's at its [API config page](https://www.strava.com/settings/api). If no API app is set, you can create a new one [following these instructions](https://developers.strava.com/docs/getting-started/#account)
 
-- Just run the tool by doing `make run`, providing `Client ID` and `Secret` and any other parameters when asked, then wait for it.
+- Run the tool
+  ```bash
+  make run
+  ```
+- Provide `Client ID` and `Secret` and any other parameters when asked, then wait for it.
 
-  - Retrieved workouts can be found on the [workouts](./workouts/) folder, **in json format** & with all its metadata intact.
+  - Retrieved workouts will be saved to whichever path you provide during setup. If not provided, it'll save them to the [workouts](./workouts/) folder, **in json format** & with all its metadata intact.
   - All `extracted tracks` will be saved to either the [tracks](./tracks/) or custom-set folder **in gpx format**. These come from each workout [polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm).
 
 ## Collaborating
