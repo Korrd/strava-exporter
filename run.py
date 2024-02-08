@@ -128,9 +128,9 @@ if skipped > 0:
   print(f"\033[93m🟡 Skipped {skipped} already existing track{'s' if skipped != 1 else ''}\033[0m")
 
 if extracted != 0:
-  print(f"\033[92m✅ {extracted} track{'s' if extracted != 1 else ''} extracted to \"{tracks_dir}\"\033[0m")
+  print(f"\033[92m✅ {extracted} track{'s' if extracted != 1 else ''} extracted to \033[37m\"{tracks_dir}\"\033[0m")
 else:
-  print(f"\033[92m✅ No new tracks found. Existing ones stored at either \"{tracks_dir}\" or \"{archive_dir}\"\033[0m")
+  print(f"\033[92m✅ No new tracks found. Existing ones stored at either \033[37m\"{tracks_dir}\"\033[92m or \033[37m\"{archive_dir}\"\033[0m")
 
 #TODO:
 #! - Make "Archive" hardcode a config parameter
