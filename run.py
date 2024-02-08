@@ -13,10 +13,10 @@ helpers.welcome()
 
 #region #? Read config, secret handling, & do oauth
 workdir = f"{os.path.dirname(os.path.realpath(__file__))}"
-secrets_file, config_file = f"{workdir}/temp/secrets.json", f"{workdir}/temp/config.json"
-workout_db_file = f"{workdir}/temp/downloaded_workouts.json"
-strava_access_token, strava_refresh_token = "", ""
+secrets_file, config_file = f"{workdir}/settings/secrets.json", f"{workdir}/settings/config.json"
+workout_db_file = f"{workdir}/settings/downloaded_workouts.json"
 
+# Config file management ======================================================
 if not os.path.exists(config_file):
   tracks_dir = config.ask_for_path(message="\033[93m⚠️  [Optional] Please, provide a full path to a folder for storing your tracks on",
                                     prompt="\033[95m📂 Tracks Folder: \033[0m")
@@ -38,14 +38,19 @@ if not os.path.exists(config_file):
 
 else:
   tracks_dir, workouts_dir = config.read_config_file(config_file)
+# =============================================================================
 
+# Activities DB file management ===============================================
 if not os.path.exists(workout_db_file):
   downloaded_workouts_db = {}
   with open(workout_db_file, mode="w", encoding="utf8") as f:
     f.write(json.dumps(downloaded_workouts_db))
 else:
   downloaded_workouts_db = config.read_downloaded_workouts(db_file=workout_db_file)
+# =============================================================================
 
+# Secrets file management =====================================================
+strava_access_token, strava_refresh_token = "", ""
 if not os.path.exists(secrets_file):
   # There's no secrets file. Ask user for client ID & Secret
   strava_client_id, strava_client_secret = strava_oauth.ask_for_secrets()
@@ -57,7 +62,6 @@ if not os.path.exists(secrets_file):
     config.write_secrets_file(secrets_file=secrets_file, \
                             strava_client_id=strava_client_id, \
                             strava_client_secret=strava_client_secret)
-
 else:
   # Get all credentials from file
   strava_access_token, \
@@ -67,7 +71,8 @@ else:
 
 if strava_access_token == "":
   # No access token present. Let's retrieve them
-  strava_access_token, strava_refresh_token = strava_oauth.do_oauth_flow(client_id=strava_client_id, \
+  strava_access_token, \
+  strava_refresh_token = strava_oauth.do_oauth_flow(client_id=strava_client_id, \
                                                     client_secret=strava_client_secret)
 else:
   if not strava_oauth.check_access_token(strava_access_token):
@@ -89,7 +94,13 @@ else:
                           strava_refresh_token=strava_refresh_token)
 
 print("\033[92m🔐 Authentication successful!\n\033[0m")
+# =============================================================================
+
 #endregion
+
+# =============================================================================
+# Main program flow ===========================================================
+# =============================================================================
 
 # Get full workouts' list to download
 workout_list = strava.get_workout_list(access_token=strava_access_token)
@@ -102,35 +113,4 @@ strava.download_all_workouts(workdir=workouts_dir, \
                               workout_db_file=workout_db_file)
 
 # Extract tracks and convert them to gpx
-print("\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
-filelist = strava.get_files(workdir=workouts_dir)
-
-skipped = 0
-extracted = 0
-archive_dir = f"{tracks_dir}/Archive"
-for key in filelist.keys():
-
-  if str(filelist[key]).endswith(".json"):
-    gpx_file = filelist[key].replace('.json', '.gpx')
-    gpx_filename = f"{tracks_dir}/{gpx_file}"
-
-    if not helpers.is_duplicate(paths=[tracks_dir, archive_dir], filename=gpx_file):
-      with open(f"{workouts_dir}/{filelist[key]}", mode="r", encoding="utf8") as f:
-        workout = json.load(f)
-      track = strava.decode_polyline(workout['map']['polyline'])
-      strava.write_gpx_from_polyline(coordinates=track, output_file=gpx_filename)
-      print(f"🗺️  Extracting to {gpx_file}...")
-      extracted += 1
-    else:
-      skipped += 1
-
-if skipped > 0:
-  print(f"\033[93m🟡 Skipped {skipped} already existing track{'s' if skipped != 1 else ''}\033[0m")
-
-if extracted != 0:
-  print(f"\033[92m✅ {extracted} track{'s' if extracted != 1 else ''} extracted to \033[37m\"{tracks_dir}\"\033[0m")
-else:
-  print(f"\033[92m✅ No new tracks found. Existing ones stored at either \033[37m\"{tracks_dir}\"\033[92m or \033[37m\"{archive_dir}\"\033[0m")
-
-#TODO:
-#! - Make "Archive" hardcode a config parameter
+strava.extract_all_tracks(workouts_dir=workouts_dir, tracks_dir=tracks_dir)

@@ -99,6 +99,9 @@ class strava_workouts:
       return workout_data
     return {}
 
+  # This function is complex by nature.
+  # No point on splitting it into smaller ones.
+  # pylint: disable=too-many-locals
   def download_all_workouts(workdir: str,
                             workout_list: dict,
                             access_token: str,
@@ -118,6 +121,7 @@ class strava_workouts:
     headers = {'Authorization': f'Bearer {access_token}'}
     downloaded = 0
 
+    # Remove already-downloaded items from the workout list
     skipped = len(workout_list)
     for key in downloaded_workouts_db.keys():
       workout_list.pop(int(key))
@@ -229,3 +233,44 @@ class strava_workouts:
     # Write the GPX data to the output file
     with open(output_file, 'w', encoding="utf8") as f:
       f.write(gpx.to_xml())
+
+  def extract_all_tracks(workouts_dir: str, tracks_dir: str):
+    """
+    #### Description
+    Extracts all tracks from downloaded workouts if not done already.
+    #### Parameters
+    - `tracks_dir`: folder where to place extracted tracks
+    - `workouts_dir`: folder where to look for workouts
+    """
+    print("\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
+    filelist = strava_workouts.get_files(workdir=workouts_dir)
+    skipped = 0
+    extracted = 0
+
+    #! - Make "Archive" hardcode a config parameter
+    archive_dir = f"{tracks_dir}/Archive"
+    #! --------------------------------------------
+
+    for key in filelist.keys():
+
+      if str(filelist[key]).endswith(".json"):
+        gpx_file = filelist[key].replace('.json', '.gpx')
+        gpx_filename = f"{tracks_dir}/{gpx_file}"
+
+        if not helpers.is_duplicate(paths=[tracks_dir, archive_dir], filename=gpx_file):
+          with open(f"{workouts_dir}/{filelist[key]}", mode="r", encoding="utf8") as f:
+            workout = json.load(f)
+          track = strava_workouts.decode_polyline(workout['map']['polyline'])
+          strava_workouts.write_gpx_from_polyline(coordinates=track, output_file=gpx_filename)
+          print(f"🗺️  Extracting to {gpx_file}...")
+          extracted += 1
+        else:
+          skipped += 1
+
+    if skipped > 0:
+      print(f"\033[93m🟡 Skipped {skipped} already existing track{'s' if skipped != 1 else ''}\033[0m")
+
+    if extracted != 0:
+      print(f"\033[92m✅ {extracted} track{'s' if extracted != 1 else ''} extracted to \033[37m\"{tracks_dir}\"\033[0m")
+    else:
+      print(f"\033[92m✅ No new tracks found. Existing ones stored at either \033[37m\"{tracks_dir}\"\033[92m or \033[37m\"{archive_dir}\"\033[0m")
