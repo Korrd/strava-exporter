@@ -8,7 +8,7 @@ import time
 import emoji
 import requests
 
-class misc_functions:
+class Helpers:
   """
   #### Description
   This class provides miscelaneous helper functions and methods.
@@ -20,7 +20,7 @@ class misc_functions:
   - `welcome()`: prints the welcome message
   """
 
-  def welcome():
+  def welcome(self):
     """
     #### Description
     Prints the app's welcome message
@@ -36,10 +36,10 @@ class misc_functions:
     print("\033[37m" + (" " * 17) + ("═" * 11) + "╛" + (" " * 22) + "╘" + ("═" * 6))
     print(("\033[37m" + ("┈" * 71) + "\033[0m"))
 
-  def sanitize_filename(filename: str) -> str:
+  def sanitize_filename(self, filename: str) -> str:
     """
     #### Description
-    Sanitizes a string so it can become a valid filename. 
+    Sanitizes a string so it can become a valid filename.
     #### Parameters
     - `filename`: A string containing the filename to be sanitized
     #### Returns
@@ -55,7 +55,7 @@ class misc_functions:
 
     return result
 
-  def wait_for_it(extra_message: str = ""):
+  def wait_for_it(self, extra_message: str = ""):
     """
     #### Description
     Waits for a set amount of time, while printing a message letting the user know how much time is left in seconds.
@@ -75,7 +75,7 @@ class misc_functions:
     for reset_point in reset_seconds:
       result = current_seconds / reset_point
       if result <= 1:
-        time_wait = reset_point - current_seconds
+        time_wait = reset_point - current_seconds + 1
         break
 
     # Wait for ratelimiter to reset
@@ -84,7 +84,7 @@ class misc_functions:
       time.sleep(1)
     print("\n")
 
-  def is_duplicate(paths: list, filename: str) -> bool:
+  def is_duplicate(self, paths: list, filename: str) -> bool:
     """
     #### Description
     Checks if a file already exists on any of the given paths
@@ -101,7 +101,7 @@ class misc_functions:
         return True
     return False
 
-  def get_rate_limits(res: requests.Response) -> list:
+  def get_rate_limits(self, res: requests.Response) -> list:
     """
     #### Description
     Returns strava's rate limits and usage quota from a given requests' response
