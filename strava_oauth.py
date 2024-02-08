@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from webbrowser import open_new_tab
 import requests
-class strava_oauth:
+class StravaOauth:
   """
   #### Description
   This class implements strava's oauth flow, which is used to obtain permission from the user to read from its strava's profile
@@ -18,7 +18,7 @@ class strava_oauth:
   - `refresh_access_token(client_id: str, client_secret: str, refresh_token: str) -> str`: gets a new access token using strava's oauth refresh token
   """
 
-  def do_oauth_flow(client_id: str, client_secret: str):
+  def do_oauth_flow(self, client_id: str, client_secret: str):
     """
     #### Description
     Performs strava's oauth flow in order to get the required access tokens
@@ -79,7 +79,7 @@ class strava_oauth:
     server.handle_request()
     return server.access_token, server.refresh_token
 
-  def refresh_access_token(client_id: str, client_secret: str, refresh_token: str) -> str:
+  def refresh_access_token(self, client_id: str, client_secret: str, refresh_token: str) -> str:
     """
     #### Description
     This function gets a new access token using strava's oauth refresh token
@@ -106,7 +106,7 @@ class strava_oauth:
     print(f"Error refreshing access token: {response.status_code}, {response.text}")
     return ""
 
-  def check_access_token(access_token: str) -> bool:
+  def check_access_token(self, access_token: str) -> bool:
     """
     #### Description
     Checks if the provided strava access token is still valid
@@ -124,7 +124,7 @@ class strava_oauth:
       return True
     return False
 
-  def ask_for_secrets() -> list:
+  def ask_for_secrets(self) -> list:
     """
     #### Description
     Asks the user for both strava's client ID and secret

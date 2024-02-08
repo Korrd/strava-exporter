@@ -8,10 +8,10 @@ import gpxpy
 import gpxpy.gpx
 import polyline
 import requests
-from helpers import misc_functions as helpers
-from config import config
+from helpers import Helpers as helpers
+from config import Config
 
-class strava_workouts:
+class StravaWorkouts:
   """
   #### Description
   This class provides methods and functions for downloading, converting and storing strava workouts and tracks
@@ -24,7 +24,7 @@ class strava_workouts:
   - `write_gpx_from_polyline(coordinates, output_file: str)`: writes a gpx file to disc from a decoded polyline
   """
 
-  def get_workout_list(access_token: str) -> dict:
+  def get_workout_list(self, access_token: str) -> dict:
     """
     #### Description
     Gets strava's user workout index
@@ -45,14 +45,14 @@ class strava_workouts:
       status_code = response.status_code
 
       if status_code == 429:
-        _, lim_daily, _, u_daily = helpers.get_rate_limits(res=response)
+        _, lim_daily, _, u_daily = helpers.get_rate_limits(self, res=response)
 
         if u_daily >= lim_daily: # Hit daily ratelimit
           print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again.")
           sys.exit(1)
         else:
-          helpers.wait_for_it()
-        # continue
+          helpers.wait_for_it(self=self)
+          continue
 
       elif status_code == 500:
         if workout_index == []:
@@ -80,7 +80,7 @@ class strava_workouts:
     result = {x[0]: x[1] for x in workout_index}
     return result
 
-  def get_workout(workout_id: str, access_token: str) -> dict:
+  def get_workout(self, workout_id: str, access_token: str) -> dict:
     """
     #### Description
     Retrieves a full workout from strava
@@ -102,7 +102,7 @@ class strava_workouts:
   # This function is complex by nature.
   # No point on splitting it into smaller ones.
   # pylint: disable=too-many-locals
-  def download_all_workouts(workdir: str,
+  def download_all_workouts(self, workdir: str,
                             workout_list: dict,
                             access_token: str,
                             downloaded_workouts_db: dict,
@@ -129,17 +129,17 @@ class strava_workouts:
 
     for key in workout_list.keys():
       value = workout_list[key]
-      output_file = f'{workdir}/{key}-{helpers.sanitize_filename(value)}.json'
+      output_file = f'{workdir}/{key}-{helpers.sanitize_filename(self, filename=value)}.json'
 
       api_url = f"https://www.strava.com/api/v3/activities/{key}"
 
       response = requests.get(api_url, headers=headers, timeout=60)
 
-      lim_15, lim_daily, u_15, u_daily = helpers.get_rate_limits(res=response)
+      lim_15, lim_daily, u_15, u_daily = helpers.get_rate_limits(self, res=response)
 
       if u_daily >= lim_daily: # Hit daily ratelimit
         print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again. \n   \033[92mIn the meantime, processing what we have...\033[0m")
-        config.write_downloaded_workouts(db_file=workout_db_file, workout_db=downloaded_workouts_db)
+        Config.write_downloaded_workouts(self, db_file=workout_db_file, workout_db=downloaded_workouts_db)
         return False
 
       match response.status_code:
@@ -149,17 +149,17 @@ class strava_workouts:
           print(f"💾 Retrieving \033[1;90m{value}\033[0m")
           downloaded += 1
           downloaded_workouts_db[key] = "1"
-          config.write_downloaded_workouts(db_file=workout_db_file, workout_db=downloaded_workouts_db)
+          Config.write_downloaded_workouts(self, db_file=workout_db_file, workout_db=downloaded_workouts_db)
 
         case 429: # Hit ratelimiter
-          helpers.wait_for_it(f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
-          workout = strava_workouts.get_workout(key, access_token=access_token)
+          helpers.wait_for_it(self, f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
+          workout = StravaWorkouts.get_workout(self, workout_id=key, access_token=access_token)
           with open(output_file, 'w', encoding="utf8") as f:
             f.write(json.dumps(workout, indent=2))
           print(f"💾 Retrieving \033[1;90m{value}\033[0m")
           downloaded += 1
           downloaded_workouts_db[key] = "1"
-          config.write_downloaded_workouts(db_file=workout_db_file, workout_db=downloaded_workouts_db)
+          Config.write_downloaded_workouts(self, db_file=workout_db_file, workout_db=downloaded_workouts_db)
 
         case 500: # Server error
           print(f"🚫 Activity \"{value}\" failed to download due to error 500")
@@ -179,7 +179,7 @@ class strava_workouts:
 
     return True
 
-  def get_files(workdir: str) -> dict:
+  def get_files(self, workdir: str) -> dict:
     """
     #### Description
     From a filename where the left part of its "-" represents the strava `workout ID`, and the right part the `workout name`, returns a dict where its key is the `workout ID` and its value the `full filename`
@@ -195,7 +195,7 @@ class strava_workouts:
 
     return result
 
-  def decode_polyline(pline: str):
+  def decode_polyline(self, pline: str):
     """
     #### Description
     Decodes a polyline into a set of coordinates
@@ -206,7 +206,7 @@ class strava_workouts:
     """
     return polyline.decode(pline)
 
-  def write_gpx_from_polyline(coordinates, output_file: str):
+  def write_gpx_from_polyline(self, coordinates, output_file: str):
     """
     #### Description
     Writes a gpx file to disc from a decoded polyline
@@ -234,7 +234,7 @@ class strava_workouts:
     with open(output_file, 'w', encoding="utf8") as f:
       f.write(gpx.to_xml())
 
-  def extract_all_tracks(workouts_dir: str, tracks_dir: str):
+  def extract_all_tracks(self, workouts_dir: str, tracks_dir: str):
     """
     #### Description
     Extracts all tracks from downloaded workouts if not done already.
@@ -243,7 +243,7 @@ class strava_workouts:
     - `workouts_dir`: folder where to look for workouts
     """
     print("\033[94mℹ️  Extracting tracks to gpx files...\033[0m")
-    filelist = strava_workouts.get_files(workdir=workouts_dir)
+    filelist = StravaWorkouts.get_files(self=self, workdir=workouts_dir)
     skipped = 0
     extracted = 0
 
@@ -257,11 +257,11 @@ class strava_workouts:
         gpx_file = filelist[key].replace('.json', '.gpx')
         gpx_filename = f"{tracks_dir}/{gpx_file}"
 
-        if not helpers.is_duplicate(paths=[tracks_dir, archive_dir], filename=gpx_file):
+        if not helpers.is_duplicate(self, paths=[tracks_dir, archive_dir], filename=gpx_file):
           with open(f"{workouts_dir}/{filelist[key]}", mode="r", encoding="utf8") as f:
             workout = json.load(f)
-          track = strava_workouts.decode_polyline(workout['map']['polyline'])
-          strava_workouts.write_gpx_from_polyline(coordinates=track, output_file=gpx_filename)
+          track = StravaWorkouts.decode_polyline(self, pline=workout['map']['polyline'])
+          StravaWorkouts.write_gpx_from_polyline(self, coordinates=track, output_file=gpx_filename)
           print(f"🗺️  Extracting to {gpx_file}...")
           extracted += 1
         else:

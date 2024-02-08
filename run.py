@@ -4,10 +4,15 @@ Main file
 import sys
 import json
 import os
-from strava_oauth import strava_oauth
-from strava_workouts import strava_workouts as strava
-from helpers import misc_functions as helpers
-from config import config
+from strava_oauth import StravaOauth
+from strava_workouts import StravaWorkouts
+from helpers import Helpers
+from config import Config
+
+helpers = Helpers()
+config = Config()
+strava_workouts = StravaWorkouts()
+strava_oauth = StravaOauth()
 
 helpers.welcome()
 
@@ -75,7 +80,7 @@ if strava_access_token == "":
   strava_refresh_token = strava_oauth.do_oauth_flow(client_id=strava_client_id, \
                                                     client_secret=strava_client_secret)
 else:
-  if not strava_oauth.check_access_token(strava_access_token):
+  if not strava_oauth.check_access_token(access_token=strava_access_token):
     # Refresh invalid access_token, so we don't bother user
     strava_access_token = strava_oauth.refresh_access_token(client_id=strava_client_id, \
                                               client_secret=strava_client_secret, \
@@ -103,14 +108,14 @@ print("\033[92m🔐 Authentication successful!\n\033[0m")
 # =============================================================================
 
 # Get full workouts' list to download
-workout_list = strava.get_workout_list(access_token=strava_access_token)
+workout_list = strava_workouts.get_workout_list(access_token=strava_access_token)
 
 # Download all workouts
-strava.download_all_workouts(workdir=workouts_dir, \
+strava_workouts.download_all_workouts(workdir=workouts_dir, \
                               workout_list=workout_list, \
                               access_token=strava_access_token, \
                               downloaded_workouts_db=downloaded_workouts_db, \
                               workout_db_file=workout_db_file)
 
 # Extract tracks and convert them to gpx
-strava.extract_all_tracks(workouts_dir=workouts_dir, tracks_dir=tracks_dir)
+strava_workouts.extract_all_tracks(workouts_dir=workouts_dir, tracks_dir=tracks_dir)
