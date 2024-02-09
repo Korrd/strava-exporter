@@ -1,6 +1,6 @@
-# <img src="./img/Strava_Exporter_Logo.png" alt="logo" width="24"> Strava Exporter 
+# <img src="./img/Strava_Exporter_Logo.png" alt="logo" width="24"> Strava Exporter
 
-![lint status](https://github.com/korrd/strava-exporter/actions/workflows/pylint.yml/badge.svg)
+![lint status](https://github.com/korrd/strava-exporter/actions/workflows/pylint.yml/badge.svg) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![version](./img/pyversion.svg)
 
 This tool will `export all workouts from strava onto a folder`, then `extract each workout's track and save each to gpx` files. Useful for sharing tracks and doing backups.
 
