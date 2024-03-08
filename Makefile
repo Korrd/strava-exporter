@@ -13,7 +13,7 @@ clean:
 	rm -rf __pycache__
 
 run:
-	python3 run.py
+	python3.11 run.py
 
 setup: requirements.txt
 	pip install -r requirements.txt
