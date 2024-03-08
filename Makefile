@@ -13,10 +13,10 @@ clean:
 	rm -rf __pycache__
 
 run:
-	python3.11 run.py
+	python3 run.py
 
 setup: requirements.txt
-	pip install -r requirements.txt
+	pip3 install -r requirements.txt
 
 lint:
 	pylint *.py
