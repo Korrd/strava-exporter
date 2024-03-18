@@ -262,7 +262,7 @@ class StravaWorkouts:
             workout = json.load(f)
           track = StravaWorkouts.decode_polyline(self, pline=workout['map']['polyline'])
           StravaWorkouts.write_gpx_from_polyline(self, coordinates=track, output_file=gpx_filename)
-          print(f"🗺️  Extracting to {gpx_file}...")
+          print(f"🗺️  Extracting to \033[1;90m{gpx_file}\033[0m")
           extracted += 1
         else:
           skipped += 1
