@@ -124,8 +124,11 @@ class StravaWorkouts:
     # Remove already-downloaded items from the workout list
     skipped = len(workout_list)
     for key in downloaded_workouts_db.keys():
-      workout_list.pop(int(key))
-    skipped = skipped - len(workout_list)
+      try:
+        workout_list.pop(int(key))
+      except:
+        print(f"\033[93m🟡 Skipped workout ID \"{key}\". Might have been deleted from strava after sync.\033[0m")
+      skipped = skipped - len(workout_list)
 
     for key in workout_list.keys():
       value = workout_list[key]
