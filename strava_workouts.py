@@ -126,7 +126,7 @@ class StravaWorkouts:
     for key in downloaded_workouts_db.keys():
       try:
         workout_list.pop(int(key))
-      except:
+      except skipped:
         print(f"\033[93m🟡 Skipped workout ID \"{key}\". Might have been deleted from strava after sync.\033[0m")
       skipped = skipped - len(workout_list)
 
