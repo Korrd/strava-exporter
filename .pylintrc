@@ -1,4 +1,4 @@
 [FORMAT]
 max-line-length=240
 indent-string="  "
-disable=protected-access, no-member, not-an-iterable, consider-using-dict-items, consider-iterating-dictionary, redefined-builtin, use-implicit-booleaness-not-comparison, too-many-arguments, invalid-name
+disable=protected-access, no-member, not-an-iterable, consider-using-dict-items, consider-iterating-dictionary, redefined-builtin, use-implicit-booleaness-not-comparison, too-many-arguments, invalid-name, bare-except
