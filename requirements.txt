@@ -1,4 +1,4 @@
-emoji~=2.11.1
+emoji~=2.12.1
 gpxpy~=1.6.2
 polyline~=2.0.2
 Requests~=2.31.0
