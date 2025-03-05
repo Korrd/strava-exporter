@@ -1,22 +1,44 @@
 """
-This module contains all functions related to strava's oauth flow
+This module provides OAuth functionality for Strava API authentication.
 """
-import os
 import getpass as g
-from urllib.parse import urlencode, parse_qs
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from webbrowser import open_new_tab
+import http.server
+import json
+import urllib.parse
+import webbrowser
 import requests
+
+class RequestHandler(http.server.BaseHTTPRequestHandler):
+  """
+  Handles the OAuth callback request from Strava.
+  Stores the authorization code in the class variable.
+  """
+  authorization_code = None
+
+  def do_GET(self):
+    """Handle GET request to the callback URL"""
+    query_components = urllib.parse.parse_qs(self.path.split('?')[1])
+
+    if 'code' in query_components:
+      RequestHandler.authorization_code = query_components['code'][0]
+      self.send_response(200)
+      self.send_header('Content-type', 'text/html')
+      self.end_headers()
+      self.wfile.write(b"Authorization successful! You can close this window.")
+    else:
+      self.send_response(400)
+      self.send_header('Content-type', 'text/html')
+      self.end_headers()
+      self.wfile.write(b"Authorization failed! Please try again.")
+
+  def log_message(self, format, *args):
+    """Override to disable logging"""
+    return
 
 class StravaOauth:
   """
-  #### Description
-  This class implements strava's oauth flow, which is used to obtain permission from the user to read from its strava's profile
-  #### Available functions.
-  - `ask_for_secrets() -> tuple`: asks the user for both strava's client ID and secret
-  - `check_access_token(access_token: str) -> bool`: checks if the provided strava access token is still valid
-  - `do_oauth_flow(client_id: str, client_secret: str) -> tuple`: performs strava's oauth flow in order to get the required access tokens
-  - `refresh_access_token(client_id: str, client_secret: str, refresh_token: str) -> str`: gets a new access token using strava's oauth refresh token
+  Handles OAuth authentication flow for Strava API.
+  Manages client credentials, access tokens, and refresh tokens.
   """
 
   def do_oauth_flow(self, client_id: str, client_secret: str):
@@ -35,63 +57,24 @@ class StravaOauth:
       print("\033[91m❌ Client ID must be a number.\033[0m")
       return None, None
 
-    with open(f"{os.path.dirname(os.path.realpath(__file__))}/oauth_success.htm", encoding="utf8") as file:
-      html_code = bytes("".join(file.readlines()), "utf-8")
-
-    class RequestHandler(BaseHTTPRequestHandler):
-      def __init__(self, *args, **kwargs):
-        self.auth_code = None
-        super().__init__(*args, **kwargs)
-
-      def log_message(self, format, *args):
-        pass  # Suppress logging
-
-      def do_GET(self):
-        try:
-          # Parse query parameters
-          query_components = parse_qs(self.path.split('?')[1])
-
-          if 'error' in query_components:
-            print(f"\033[91m❌ Authorization error: {query_components['error'][0]}\033[0m")
-            self.server.auth_code = None
-          elif 'code' in query_components:
-            self.server.auth_code = query_components['code'][0]
-          else:
-            print("\033[91m❌ No authorization code received\033[0m")
-            self.server.auth_code = None
-
-          # Send response to browser
-          self.send_response(200)
-          self.send_header('Content-type', 'text/html')
-          self.end_headers()
-          self.wfile.write(html_code)
-        except Exception as e:
-          print(f"\033[91m❌ Error handling OAuth callback: {e}\033[0m")
-          self.server.auth_code = None
-
     # Step 1: Get Authorization Code
     redirect_uri = 'http://localhost:8000/'
-    auth_url = f'https://www.strava.com/oauth/authorize?{urlencode({
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
-        "response_type": "code",
-        "scope": "activity:read_all"
-    })}'
+    auth_url = f'https://www.strava.com/oauth/authorize?client_id={client_id}&response_type=code&redirect_uri={redirect_uri}&scope=activity:read_all'
 
-    print("\033[93m🟡 Please authorize this script to read from your Strava profile\033[0m")
-    print("\033[93m   Ensure the app being authorized is actually yours on Strava's website\033[0m")
+    print("\n\033[93m⚠️  Please authorize this script to read from your strava profile.\033[0m")
+    print("\033[93m⚠️  Make sure the app you're authorizing is indeed yours on strava's website.\033[0m")
 
     # Start local server before opening browser
-    server = HTTPServer(('localhost', 8000), RequestHandler)
-    server.auth_code = None
+    server = http.server.HTTPServer(('localhost', 8000), RequestHandler)
+    RequestHandler.authorization_code = None
 
     # Open browser for authorization
-    open_new_tab(auth_url)
+    webbrowser.open_new_tab(auth_url)
 
-    # Wait for the callback
+    # Wait for callback
     server.handle_request()
 
-    if not server.auth_code:
+    if not RequestHandler.authorization_code:
       print("\033[91m❌ Failed to get authorization code\033[0m")
       return None, None
 
@@ -100,7 +83,7 @@ class StravaOauth:
     payload = {
       'client_id': client_id,
       'client_secret': client_secret,
-      'code': server.auth_code,
+      'code': RequestHandler.authorization_code,
       'grant_type': 'authorization_code'
     }
 
@@ -110,8 +93,8 @@ class StravaOauth:
 
       tokens = response.json()
       return tokens.get('access_token'), tokens.get('refresh_token')
-    except requests.exceptions.RequestException as e:
-      print(f"\033[91m❌ Error exchanging code for token: {e}\033[0m")
+    except (requests.exceptions.RequestException, json.JSONDecodeError) as e:
+      print(f"\033[91m❌ Error exchanging authorization code: {e}\033[0m")
       return None, None
 
   def refresh_access_token(self, client_id: str, client_secret: str, refresh_token: str) -> str:
@@ -170,20 +153,11 @@ class StravaOauth:
 
   def ask_for_secrets(self) -> tuple:
     """
-    #### Description
-    Asks the user for both strava's client ID and secret
-    #### Returns
-    A tuple containing (client_id, client_secret)
+    Prompts the user for Strava client ID and secret.
+    Returns a tuple of (client_id, client_secret).
     """
-    print("\033[93m⚠️  Please, provide your Client ID and Secret from Strava's API config.\n    You can get these from here: https://www.strava.com/settings/api\033[0m")
-
-    while True:
-      client_id = g.getpass("\033[95m🪪  Client ID: \033[0m")
-      try:
-        int(client_id)  # Validate it's a number
-        break
-      except ValueError:
-        print("\033[91m❌ Client ID must be a number. Please try again.\033[0m")
-
+    print("\033[93m⚠️  Please, provide your strava's \"Client ID\" and \"Client Secret\"\033[0m")
+    print("\033[94mℹ️  You can find them at https://www.strava.com/settings/api\033[0m")
+    client_id = g.getpass("\033[95m🔑 Client ID: \033[0m")
     client_secret = g.getpass("\033[95m🔑 Client Secret: \033[0m")
     return client_id, client_secret
