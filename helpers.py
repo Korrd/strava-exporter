@@ -4,6 +4,7 @@ This module provides helper functions for the strava_workouts class
 import os
 import time
 import re
+import asyncio
 from typing import List, Tuple
 
 class Helpers:

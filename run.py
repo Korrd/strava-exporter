@@ -1,7 +1,6 @@
 """
 Main file
 """
-import sys
 import json
 import os
 import asyncio
@@ -11,6 +10,10 @@ from helpers import Helpers
 from config import Config
 
 async def main():
+  """
+  Main function that handles the Strava workout export process.
+  Manages OAuth authentication, downloads workouts, and extracts tracks.
+  """
   helpers = Helpers()
   config = Config()
   strava_oauth = StravaOauth()
@@ -60,7 +63,7 @@ async def main():
   # Handle OAuth credentials and tokens
   credentials = {}
   if os.path.exists(secrets_file):
-    with open(secrets_file, 'r') as f:
+    with open(secrets_file, 'r', encoding='utf-8') as f:
       credentials = json.load(f)
 
     # Check if we have a valid access token
@@ -102,7 +105,7 @@ async def main():
     # Save new tokens
     credentials['strava_access_token'] = access_token
     credentials['strava_refresh_token'] = refresh_token
-    with open(secrets_file, 'w') as f:
+    with open(secrets_file, 'w', encoding='utf-8') as f:
       json.dump(credentials, f)
 
   print("\033[92m🔐 Authentication successful!\033[0m")
