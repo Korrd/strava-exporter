@@ -18,18 +18,18 @@ from config import Config
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level=logging.INFO,
+  format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
 @dataclass
 class WorkoutMetadata:
-    """Data class for workout metadata"""
-    workout_id: str
-    name: str
-    start_date: str
-    type: str
+  """Data class for workout metadata"""
+  workout_id: str
+  name: str
+  start_date: str
+  type: str
 
 class StravaWorkouts:
   """
@@ -191,7 +191,7 @@ class StravaWorkouts:
         if empty_pages == len(batch_tasks):  # All pages in batch were empty
           break
 
-        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting strava's activities list {'...' if page_number % 2 == 0 else '.  '}", end="\r", flush=True)
+        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting strava's activities list {'...' if page_number % 2 == 0 else '.  '} [{len(workout_index)} so far]", end="\r", flush=True)
 
     total_activities = len(workout_index)
     print(f"\n\033[94mℹ️  Got {total_activities} activities. Retrieving them...\033[0m")
@@ -222,10 +222,10 @@ class StravaWorkouts:
     return {}
 
   def download_all_workouts(self, workdir: str,
-                          workout_list: dict,
-                          access_token: str,
-                          downloaded_workouts_db: dict,
-                          workout_db_file: str) -> bool:
+                        workout_list: dict,
+                        access_token: str,
+                        downloaded_workouts_db: dict,
+                        workout_db_file: str) -> bool:
     """
     #### Description
     Implements the get_workout function and downloads all workouts that are still unsaved on the workouts dir.
