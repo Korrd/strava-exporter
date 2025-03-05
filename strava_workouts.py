@@ -117,7 +117,7 @@ class StravaWorkouts:
   async def get_workout_list_async(self, access_token: str) -> dict:
     """
     #### Description
-    Gets strava's user workout index asynchronously
+    Gets strava's user workout index asynchronously with concurrent page fetching
     #### Parameters
     - `access_token`: strava's access token
     #### Returns
@@ -126,50 +126,79 @@ class StravaWorkouts:
     workout_index = []
     page_limit = 200
     headers = {'Authorization': f'Bearer {access_token}'}
-    page_number = 1
-    do_download = True
 
-    while do_download:
+    # First, get page 1 to determine total activities
+    activities_url = f'https://www.strava.com/api/v3/athlete/activities?page=1&per_page={page_limit}'
+    async with self._rate_limit_semaphore:
+      async with self.session.get(activities_url, headers=headers) as response:
+        if response.status == 429:
+          _, lim_daily, _, u_daily = await helpers.get_rate_limits_async(response)
+          if u_daily >= lim_daily:
+            print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again.")
+            return {}
+          await helpers.wait_for_it_async()
+          return await self.get_workout_list_async(access_token)
+
+        first_page = await response.json()
+        if not first_page:
+          return {}
+
+        for activity in first_page:
+          workout_index.append([activity["id"], activity["name"]])
+
+    # Calculate total pages needed based on first page results
+    # Strava returns empty list when no more activities
+    total_pages = (len(first_page) == page_limit)
+
+    async def fetch_page(page_number: int) -> List:
+      """Fetch a single page of activities"""
       activities_url = f'https://www.strava.com/api/v3/athlete/activities?page={page_number}&per_page={page_limit}'
-
       async with self._rate_limit_semaphore:
         async with self.session.get(activities_url, headers=headers) as response:
-          status_code = response.status
-
-          if status_code == 429:
+          if response.status == 429:
             _, lim_daily, _, u_daily = await helpers.get_rate_limits_async(response)
+            if u_daily >= lim_daily:
+              return []
+            await helpers.wait_for_it_async()
+            return await fetch_page(page_number)
 
-            if u_daily >= lim_daily:  # Hit daily ratelimit
-              logger.error("Daily ratelimit reached! Wait until tomorrow and try again.")
-              return {x[0]: x[1] for x in workout_index}
-            else:
-              await helpers.wait_for_it_async()
-              continue
-
-          elif status_code == 500:
-            if not workout_index:
-              logger.error("Internal server error while retrieving activities list. Aborting.")
-              return {}
-            else:
-              logger.warning("Internal server error. Moving on with partial list.")
-              break
+          if response.status != 200:
+            print(f"\033[93m🟡 Failed to fetch page {page_number}: status {response.status}\033[0m")
+            return []
 
           activities = await response.json()
+          return [[activity["id"], activity["name"]] for activity in activities]
 
-          if not activities:
-            do_download = False
-          else:
-            logger.info(f"Fetching page {page_number}")
-            page_number += 1
+    # Fetch remaining pages concurrently
+    if total_pages:
+      page_number = 2
+      tasks = []
+      while True:
+        # Fetch pages in batches of 10 to respect rate limits
+        batch_tasks = []
+        for _ in range(10):
+          batch_tasks.append(fetch_page(page_number))
+          page_number += 1
 
-          for activity in activities:
-            workout_index.append([activity["id"], activity["name"]])
+        results = await asyncio.gather(*batch_tasks)
+        empty_pages = 0
+
+        for page_results in results:
+          if not page_results:
+            empty_pages += 1
+          workout_index.extend(page_results)
+
+        if empty_pages == len(batch_tasks):  # All pages in batch were empty
+          break
+
+        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting strava's activities list {'...' if page_number % 2 == 0 else '.  '}", end="\r", flush=True)
 
     total_activities = len(workout_index)
-    logger.info(f"Retrieved {total_activities} activities")
+    print(f"\n\033[94mℹ️  Got {total_activities} activities. Retrieving them...\033[0m")
 
     if total_activities >= 2000:
-      logger.warning("Activity count exceeds daily rate limit (2000). Run again tomorrow to complete.")
+      print("\n\033[93m🚦 Since the activity count is greater than strava's daily ratelimit of 2000,\033[0m")
+      print("\033[93m🚦 you may have to run this script again tomorrow to finish.\n\033[0m")
 
     return {x[0]: x[1] for x in workout_index}
 
@@ -192,95 +221,84 @@ class StravaWorkouts:
           return await response.json()
     return {}
 
-  # This function is complex by nature.
-  # No point on splitting it into smaller ones.
-  # pylint: disable=too-many-locals
-  async def download_all_workouts_async(
-    self,
-    workdir: str,
-    workout_list: dict,
-    access_token: str,
-    downloaded_workouts_db: dict,
-    workout_db_file: str
-  ) -> bool:
+  def download_all_workouts(self, workdir: str,
+                          workout_list: dict,
+                          access_token: str,
+                          downloaded_workouts_db: dict,
+                          workout_db_file: str) -> bool:
     """
     #### Description
-    Downloads all workouts asynchronously that are still unsaved in the workouts dir.
+    Implements the get_workout function and downloads all workouts that are still unsaved on the workouts dir.
     #### Parameters
     - `access_token`: strava's access token
+    - `skipped`: already skipped workouts for the skipped count
     - `workdir`: working directory where our workouts will be stored
     - `workout_list`: a list of workout IDs
-    - `downloaded_workouts_db`: database of already downloaded workouts
-    - `workout_db_file`: path to the workout database file
     #### Returns
     `True` if successful, `False` otherwise
     """
     headers = {'Authorization': f'Bearer {access_token}'}
     downloaded = 0
-    tasks = []
 
     # Remove already-downloaded items from the workout list
     skipped = len(workout_list)
     for key in downloaded_workouts_db.keys():
       try:
         workout_list.pop(int(key))
-      except KeyError:
-        logger.warning(f'Skipped workout ID "{key}". Might have been deleted from strava after sync.')
+      except:
+        print(f"\033[93m🟡 Skipped workout ID \"{key}\". Might have been deleted from strava after sync.\033[0m")
       skipped = skipped - len(workout_list)
 
-    async def download_workout(key: str, value: str) -> Tuple[bool, str, str]:
+    for key in workout_list.keys():
+      value = workout_list[key]
       output_file = f'{workdir}/{key}-{helpers.sanitize_filename(self, filename=value)}.json'
+
       api_url = f"https://www.strava.com/api/v3/activities/{key}"
 
-      async with self._rate_limit_semaphore:
-        async with self.session.get(api_url, headers=headers) as response:
-          status = response.status
+      response = requests.get(api_url, headers=headers, timeout=60)
 
-          if status == 429:
-            _, lim_daily, _, u_daily = await helpers.get_rate_limits_async(response)
-            if u_daily >= lim_daily:
-              return False, key, "daily_limit"
-            await helpers.wait_for_it_async()
-            return await download_workout(key, value)
+      lim_15, lim_daily, u_15, u_daily = helpers.get_rate_limits(self, res=response)
 
-          if status == 200:
-            workout_data = await response.json()
-            async with aiohttp.ClientSession() as file_session:
-              async with file_session.post(output_file, json=workout_data) as _:
-                return True, key, output_file
-
-          return False, key, f"error_{status}"
-
-    # Create download tasks for each workout
-    for key, value in workout_list.items():
-      tasks.append(download_workout(str(key), value))
-
-    # Execute tasks concurrently with rate limiting
-    results = await asyncio.gather(*tasks)
-
-    # Process results
-    for success, key, result in results:
-      if success:
-        downloaded += 1
-        downloaded_workouts_db[key] = "1"
-        logger.info(f"Downloaded workout: {workout_list[int(key)]}")
-      elif result == "daily_limit":
-        logger.error("Daily rate limit reached! Wait until tomorrow.")
-        await Config.write_downloaded_workouts_async(workout_db_file, downloaded_workouts_db)
+      if u_daily >= lim_daily: # Hit daily ratelimit
+        print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again. \n   \033[92mIn the meantime, processing what we have...\033[0m")
+        Config.write_downloaded_workouts(self, db_file=workout_db_file, workout_db=downloaded_workouts_db)
         return False
-      else:
-        logger.error(f"Failed to download workout {key}: {result}")
-        skipped += 1
+
+      match response.status_code:
+        case 200: # Success!
+          with open(output_file, 'w', encoding="utf8") as f:
+            json.dump(response.json(), f, indent=2)
+          print(f"💾 Retrieving \033[1;90m{value}\033[0m")
+          downloaded += 1
+          downloaded_workouts_db[key] = "1"
+          Config.write_downloaded_workouts(self, db_file=workout_db_file, workout_db=downloaded_workouts_db)
+
+        case 429: # Hit ratelimiter
+          helpers.wait_for_it(self, f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
+          workout = StravaWorkouts.get_workout(self, workout_id=key, access_token=access_token)
+          with open(output_file, 'w', encoding="utf8") as f:
+            f.write(json.dumps(workout, indent=2))
+          print(f"💾 Retrieving \033[1;90m{value}\033[0m")
+          downloaded += 1
+          downloaded_workouts_db[key] = "1"
+          Config.write_downloaded_workouts(self, db_file=workout_db_file, workout_db=downloaded_workouts_db)
+
+        case 500: # Server error
+          print(f"🚫 Activity \"{value}\" failed to download due to error 500")
+          skipped += 1
+
+        case _:
+          print(f"🚫 Unexpected status code ({response.status_code}) while retrieving activity {value}")
+          skipped += 1
 
     if skipped > 0:
-      logger.warning(f"Skipped {skipped} already existing activity/activities")
+      print(f"\033[93m🟡 Skipped {skipped} already existing activit{'ies' if skipped != 1 else 'y'}\033[0m")
 
-    if downloaded > 0:
-      logger.info(f"{downloaded} activity/activities downloaded to {workdir}")
+    if downloaded != 0:
+      print(f"\033[92m✅ {downloaded} activit{'ies' if downloaded != 1 else 'y'} downloaded to \033[37m\"{workdir}\033[0m\"\n")
     else:
-      logger.info(f"No new activities found. Existing ones stored at {workdir}")
+      print(f"\033[92m✅ No new activities found. Existing ones stored at \033[37m\"{workdir}\"\n\033[0m")
 
-    await Config.write_downloaded_workouts_async(workout_db_file, downloaded_workouts_db)
     return True
 
   def get_files(self, workdir: str) -> dict:
