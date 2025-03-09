@@ -27,10 +27,15 @@ class Helpers:
     #### Returns
     A tuple containing (15m_limit, daily_limit, 15m_usage, daily_usage)
     """
-    lim_15 = int(res.headers.get('X-RateLimit-Limit', 0))
-    lim_daily = int(res.headers.get('X-RateLimit-Daily', 0))
-    u_15 = int(res.headers.get('X-RateLimit-Usage', 0))
-    u_daily = int(res.headers.get('X-RateLimit-Daily-Usage', 0))
+    # Handle comma-separated rate limits (e.g., "200,2000")
+    limits = res.headers.get('X-RateLimit-Limit', '0,0').split(',')
+    lim_15 = int(limits[0])
+    lim_daily = int(limits[1]) if len(limits) > 1 else 0
+
+    # Handle comma-separated usage values
+    usage = res.headers.get('X-RateLimit-Usage', '0,0').split(',')
+    u_15 = int(usage[0])
+    u_daily = int(usage[1]) if len(usage) > 1 else 0
 
     return lim_15, lim_daily, u_15, u_daily
 
@@ -43,10 +48,15 @@ class Helpers:
     #### Returns
     A tuple containing (15m_limit, daily_limit, 15m_usage, daily_usage)
     """
-    lim_15 = int(res.headers.get('X-RateLimit-Limit', 0))
-    lim_daily = int(res.headers.get('X-RateLimit-Daily', 0))
-    u_15 = int(res.headers.get('X-RateLimit-Usage', 0))
-    u_daily = int(res.headers.get('X-RateLimit-Daily-Usage', 0))
+    # Handle comma-separated rate limits (e.g., "200,2000")
+    limits = res.headers.get('X-RateLimit-Limit', '0,0').split(',')
+    lim_15 = int(limits[0])
+    lim_daily = int(limits[1]) if len(limits) > 1 else 0
+
+    # Handle comma-separated usage values
+    usage = res.headers.get('X-RateLimit-Usage', '0,0').split(',')
+    u_15 = int(usage[0])
+    u_daily = int(usage[1]) if len(usage) > 1 else 0
 
     return lim_15, lim_daily, u_15, u_daily
 
