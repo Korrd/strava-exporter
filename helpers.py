@@ -27,10 +27,13 @@ class Helpers:
     #### Returns
     A tuple containing (15m_limit, daily_limit, 15m_usage, daily_usage)
     """
-    lim_15 = int(res.headers.get('X-RateLimit-Limit', 0))
-    lim_daily = int(res.headers.get('X-RateLimit-Daily', 0))
-    u_15 = int(res.headers.get('X-RateLimit-Usage', 0))
-    u_daily = int(res.headers.get('X-RateLimit-Daily-Usage', 0))
+    lim_15, lim_daily = map(int, res.headers._store['x-ratelimit-limit'][1].split(","))
+    u_15, u_daily = map(int, res.headers._store['x-ratelimit-usage'][1].split(","))
+
+    # lim_15 = int(res.headers.get('X-RateLimit-Limit', 0))
+    # lim_daily = int(res.headers.get('X-RateLimit-Daily', 0))
+    # u_15 = int(res.headers.get('X-RateLimit-Usage', 0))
+    # u_daily = int(res.headers.get('X-RateLimit-Daily-Usage', 0))
 
     return lim_15, lim_daily, u_15, u_daily
 
@@ -43,10 +46,8 @@ class Helpers:
     #### Returns
     A tuple containing (15m_limit, daily_limit, 15m_usage, daily_usage)
     """
-    lim_15 = int(res.headers.get('X-RateLimit-Limit', 0))
-    lim_daily = int(res.headers.get('X-RateLimit-Daily', 0))
-    u_15 = int(res.headers.get('X-RateLimit-Usage', 0))
-    u_daily = int(res.headers.get('X-RateLimit-Daily-Usage', 0))
+    lim_15, lim_daily = map(int, res.headers._store['x-ratelimit-limit'][1].split(","))
+    u_15, u_daily = map(int, res.headers._store['x-ratelimit-usage'][1].split(","))
 
     return lim_15, lim_daily, u_15, u_daily
 
@@ -103,14 +104,15 @@ class Helpers:
   def welcome(self):
     """
     #### Description
-    Prints a welcome message
+    Prints the app's welcome message
     """
-    print("""                           ╔═════════════════════════╗
-                           ║ Strava Workout Exporter ║
-                           ╚═╦══════════╦══════════╦═╝
-Created by:  Victor Martin   ║          ║          ║ Github:     @korrd
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╜          ║          ╙┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-                                        ║
-                 12-01-2024 ┌┈┈┈┈┈┈┈┈┈┈┈╨┈┈┈┈┈┈┈┈┈┈┐ Spain
-                 ═══════════╛                      ╘══════
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈""")
+
+    print("\033[37m╔═════════════════════════╗\033[0m".center(89))
+    print("\033[37m║ \033[1;31mStrava \033[1;33mWorkout \033[1;31mExporter\033[0;37m ║\033[0m".center(117))
+    print("\033[37m╚═╦══════════╦══════════╦═╝\033[0m".center(89))
+    print("\033[37mCreated by:  \033[1;31mVictor Martin \033[0;37m  ║" + (" " * 10) + "║" + (" " * 10) + "║ \033[37mGithub:     \033[1;31m@korrd\033[0m")
+    print("\033[37m┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╜\033[37m" + (" " * 10) + "║\033[37m" + (" " * 10) + "╙┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈\033[0m")
+    print("\033[37m" + (" " * 40) + "║\033[0m")
+    print((" " * 17) + "\033[1;31m12-01-2024\033[0;37m ┌┈┈┈┈┈┈┈┈┈┈┈╨┈┈┈┈┈┈┈┈┈┈┐ \033[1;31mSpain\033[0m")
+    print("\033[37m" + (" " * 17) + ("═" * 11) + "╛" + (" " * 22) + "╘" + ("═" * 6))
+    print(("\033[37m" + ("┈" * 71) + "\033[0m"))
