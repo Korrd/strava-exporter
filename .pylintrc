@@ -1,7 +1,20 @@
 [FORMAT]
 max-line-length=240
 indent-string="  "
-disable=protected-access, no-member, not-an-iterable, consider-using-dict-items, consider-iterating-dictionary, redefined-builtin, use-implicit-booleaness-not-comparison, too-many-arguments, invalid-name, bare-except
+disable=protected-access,
+        no-member,
+        not-an-iterable,
+        consider-using-dict-items,
+        consider-iterating-dictionary,
+        redefined-builtin,
+        use-implicit-booleaness-not-comparison,
+        too-many-arguments,
+        invalid-name,
+        bare-except,
+        too-many-locals,
+        too-many-branches,
+        too-many-statements,
+        import-error
 
 [DESIGN]
 max-positional-arguments=6
