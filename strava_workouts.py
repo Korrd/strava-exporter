@@ -4,12 +4,32 @@ This module provides the strava_workouts class, meant to work with strava workou
 import sys
 import json
 import os
+import logging
+import asyncio
+from typing import List, Tuple
+from dataclasses import dataclass
 import gpxpy
 import gpxpy.gpx
 import polyline
+import aiohttp
 import requests
-from helpers import Helpers as helpers
+from helpers import Helpers
 from config import Config
+
+# Configure logging
+logging.basicConfig(
+  level=logging.INFO,
+  format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+@dataclass
+class WorkoutMetadata:
+  """Data class for workout metadata"""
+  workout_id: str
+  name: str
+  start_date: str
+  type: str
 
 class StravaWorkouts:
   """
@@ -23,6 +43,20 @@ class StravaWorkouts:
   - `get_workout_list(access_token: str) -> list`: gets strava's user workout index
   - `write_gpx_from_polyline(coordinates, output_file: str)`: writes a gpx file to disc from a decoded polyline
   """
+
+  def __init__(self) -> None:
+    self.session = None
+    self._rate_limit_semaphore = asyncio.Semaphore(10)  # Limit concurrent requests
+
+  async def __aenter__(self):
+    """Async context manager entry"""
+    self.session = aiohttp.ClientSession()
+    return self
+
+  async def __aexit__(self, exc_type, exc_val, exc_tb):
+    """Async context manager exit"""
+    if self.session:
+      await self.session.close()
 
   def get_workout_list(self, access_token: str) -> dict:
     """
@@ -45,13 +79,13 @@ class StravaWorkouts:
       status_code = response.status_code
 
       if status_code == 429:
-        _, lim_daily, _, u_daily = helpers.get_rate_limits(self, res=response)
+        _, lim_daily, _, u_daily = Helpers().get_rate_limits(res=response)
 
         if u_daily >= lim_daily: # Hit daily ratelimit
           print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again.")
           sys.exit(1)
         else:
-          helpers.wait_for_it(self=self)
+          Helpers().wait_for_it()
           continue
 
       elif status_code == 500:
@@ -80,10 +114,97 @@ class StravaWorkouts:
     result = {x[0]: x[1] for x in workout_index}
     return result
 
-  def get_workout(self, workout_id: str, access_token: str) -> dict:
+  async def get_workout_list_async(self, access_token: str) -> dict:
     """
     #### Description
-    Retrieves a full workout from strava
+    Gets strava's user workout index asynchronously with concurrent page fetching
+    #### Parameters
+    - `access_token`: strava's access token
+    #### Returns
+    An index of workouts
+    """
+    workout_index = []
+    page_limit = 200
+    headers = {'Authorization': f'Bearer {access_token}'}
+
+    # First, get page 1 to determine total activities
+    activities_url = f'https://www.strava.com/api/v3/athlete/activities?page=1&per_page={page_limit}'
+    async with self._rate_limit_semaphore:
+      async with self.session.get(activities_url, headers=headers) as response:
+        if response.status == 429:
+          _, lim_daily, _, u_daily = Helpers().get_rate_limits(res=response)
+          if u_daily >= lim_daily:
+            print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again.")
+            return {}
+          await Helpers().wait_for_it_async()
+          return await self.get_workout_list_async(access_token)
+
+        first_page = await response.json()
+        if not first_page:
+          return {}
+
+        for activity in first_page:
+          workout_index.append([activity["id"], activity["name"]])
+
+    # Calculate total pages needed based on first page results
+    # Strava returns empty list when no more activities
+    total_pages = len(first_page) == page_limit
+
+    async def fetch_page(page_number: int) -> List:
+      """Fetch a single page of activities"""
+      activities_url = f'https://www.strava.com/api/v3/athlete/activities?page={page_number}&per_page={page_limit}'
+      async with self._rate_limit_semaphore:
+        async with self.session.get(activities_url, headers=headers) as response:
+          if response.status == 429:
+            _, lim_daily, _, u_daily = Helpers().get_rate_limits(res=response)
+            if u_daily >= lim_daily:
+              return []
+            await Helpers().wait_for_it_async()
+            return await fetch_page(page_number)
+
+          if response.status != 200:
+            print(f"\033[93m🟡 Failed to fetch page {page_number}: status {response.status}\033[0m")
+            return []
+
+          activities = await response.json()
+          return [[activity["id"], activity["name"]] for activity in activities]
+
+    # Fetch remaining pages concurrently
+    if total_pages:
+      page_number = 2
+      while True:
+        # Fetch pages in batches of 10 to respect rate limits
+        batch_tasks = []
+        for _ in range(10):
+          batch_tasks.append(fetch_page(page_number))
+          page_number += 1
+
+        results = await asyncio.gather(*batch_tasks)
+        empty_pages = 0
+
+        for page_results in results:
+          if not page_results:
+            empty_pages += 1
+          workout_index.extend(page_results)
+
+        if empty_pages == len(batch_tasks):  # All pages in batch were empty
+          break
+
+        print(f"{'⏳' if page_number % 2 == 0 else '⌛️'} Getting strava's activities list {'...' if page_number % 2 == 0 else '.  '} [{len(workout_index)} so far]", end="\r", flush=True)
+
+    total_activities = len(workout_index)
+    print(f"\n\033[94mℹ️  Got {total_activities} activities. Retrieving them...\033[0m")
+
+    if total_activities >= 2000:
+      print("\n\033[93m🚦 Since the activity count is greater than strava's daily ratelimit of 2000,\033[0m")
+      print("\033[93m🚦 you may have to run this script again tomorrow to finish.\n\033[0m")
+
+    return {x[0]: x[1] for x in workout_index}
+
+  async def get_workout_async(self, workout_id: str, access_token: str) -> dict:
+    """
+    #### Description
+    Retrieves a full workout from strava asynchronously
     #### Parameters
     - `access_token`: strava's access token
     - `workout_id`: workout ID of the workout to be retrieved
@@ -93,20 +214,17 @@ class StravaWorkouts:
     api_url = f"https://www.strava.com/api/v3/activities/{workout_id}"
     headers = {'Authorization': f'Bearer {access_token}'}
 
-    response = requests.get(api_url, headers=headers, timeout=60)
-    if response.status_code == 200:
-      workout_data = response.json()
-      return workout_data
+    async with self._rate_limit_semaphore:
+      async with self.session.get(api_url, headers=headers) as response:
+        if response.status == 200:
+          return await response.json()
     return {}
 
-  # This function is complex by nature.
-  # No point on splitting it into smaller ones.
-  # pylint: disable=too-many-locals
   def download_all_workouts(self, workdir: str,
-                            workout_list: dict,
-                            access_token: str,
-                            downloaded_workouts_db: dict,
-                            workout_db_file: str) -> bool:
+                        workout_list: dict,
+                        access_token: str,
+                        downloaded_workouts_db: dict,
+                        workout_db_file: str) -> bool:
     """
     #### Description
     Implements the get_workout function and downloads all workouts that are still unsaved on the workouts dir.
@@ -132,13 +250,13 @@ class StravaWorkouts:
 
     for key in workout_list.keys():
       value = workout_list[key]
-      output_file = f'{workdir}/{key}-{helpers.sanitize_filename(self, filename=value)}.json'
+      output_file = f'{workdir}/{key}-{Helpers.sanitize_filename(self, filename=value)}.json'
 
       api_url = f"https://www.strava.com/api/v3/activities/{key}"
 
       response = requests.get(api_url, headers=headers, timeout=60)
 
-      lim_15, lim_daily, u_15, u_daily = helpers.get_rate_limits(self, res=response)
+      lim_15, lim_daily, u_15, u_daily = Helpers().get_rate_limits(res=response)
 
       if u_daily >= lim_daily: # Hit daily ratelimit
         print("\033[91m💥 Daily ratelimit reached!\n  \033[0m Wait until tomorrow and try again. \n   \033[92mIn the meantime, processing what we have...\033[0m")
@@ -155,7 +273,7 @@ class StravaWorkouts:
           Config.write_downloaded_workouts(self, db_file=workout_db_file, workout_db=downloaded_workouts_db)
 
         case 429: # Hit ratelimiter
-          helpers.wait_for_it(self, f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
+          Helpers().wait_for_it(f"15m Limit: [{u_15}/{lim_15}], Daily Limit: [{u_daily}/{lim_daily}]")
           workout = StravaWorkouts.get_workout(self, workout_id=key, access_token=access_token)
           with open(output_file, 'w', encoding="utf8") as f:
             f.write(json.dumps(workout, indent=2))
@@ -198,7 +316,7 @@ class StravaWorkouts:
 
     return result
 
-  def decode_polyline(self, pline: str):
+  def decode_polyline(self, pline: str) -> List[Tuple[float, float]]:
     """
     #### Description
     Decodes a polyline into a set of coordinates
@@ -207,7 +325,11 @@ class StravaWorkouts:
     #### Returns
     A set of coordinates
     """
-    return polyline.decode(pline)
+    try:
+      return polyline.decode(pline)
+    except Exception as e:
+      logger.error("Failed to decode polyline: %s", e)
+      raise ValueError(f"Invalid polyline format: {e}") from e
 
   def write_gpx_from_polyline(self, coordinates, output_file: str):
     """
@@ -260,7 +382,7 @@ class StravaWorkouts:
         gpx_file = filelist[key].replace('.json', '.gpx')
         gpx_filename = f"{tracks_dir}/{gpx_file}"
 
-        if not helpers.is_duplicate(self, paths=[tracks_dir, archive_dir], filename=gpx_file):
+        if not Helpers.is_duplicate(self, paths=[tracks_dir, archive_dir], filename=gpx_file):
           with open(f"{workouts_dir}/{filelist[key]}", mode="r", encoding="utf8") as f:
             workout = json.load(f)
           track = StravaWorkouts.decode_polyline(self, pline=workout['map']['polyline'])

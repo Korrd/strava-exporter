@@ -1,121 +1,82 @@
 """
-Configuration module, containing the config class.
+This module provides configuration management functionality
 """
 import json
+import getpass as g
+
 class Config:
   """
   #### Description
-  This class provides functions and methods related to app config.
-  #### Available functions
-  - `ask_for_path(message: str, prompt: str) -> str`: asks the user for a directory path
-  - `read_config_file(config_file: str) -> str`: reads the app's config file from disk
-  - `read_downloaded_workouts(db_file: str) -> dict`: loads the downloaded workouts database from its JSON file and returns it as a dict
-  - `read_secrets_file(secrets_file: str) -> list`: reads the app's secrets file from disk
-  - `write_config_file(config_file: str, tracks_output_path: str)`: writes the app's config file to disk
-  - `write_downloaded_workouts(db_file: str, workout_db: dict)`: writes the downloaded workouts to its JSON file from a dict
-  - `write_secrets_file(secrets_file: str, strava_client_id: str = "", strava_client_secret: str = "", strava_access_token: str = "", strava_refresh_token: str = "")`: writes the app's secrets file to disk
+  This class provides configuration management functionality
+  #### Available functions.
+  - `ask_for_path(message: str, prompt: str) -> str`: asks the user for a path
+  - `read_config_file(config_file: str) -> tuple`: reads the config file
+  - `read_downloaded_workouts(db_file: str) -> dict`: reads the downloaded workouts database
+  - `write_config_file(config_file: str, tracks_output_path: str, workouts_output_path: str)`: writes the config file
+  - `write_downloaded_workouts(db_file: str, workout_db: dict)`: writes the downloaded workouts database
   """
-  def read_secrets_file(self, secrets_file: str) -> list:
-    """
-    #### Description
-    Reads the app's secrets file from disk
-    #### Parameters
-    - `secrets_file`: full path to the file where secrets are stored
-    #### Returns
-    - A list containing all of the app's secrets
-    #### Notes
-    """
-    with open(secrets_file, mode="r", encoding="utf8") as f:
-      conf = json.loads(f.read())
-      return conf['strava_access_token'], \
-            conf['strava_refresh_token'], \
-            conf['strava_client_id'], \
-            conf['strava_client_secret']
-
-  def write_secrets_file(self, secrets_file: str,
-                        strava_client_id: str = "",
-                        strava_client_secret: str = "",
-                        strava_access_token: str = "",
-                        strava_refresh_token: str = ""):
-    """
-    #### Description
-    Writes the app's secrets file to disk
-    #### Parameters
-    - `secrets_file`: full path to the file where secrets are stored
-    - `strava_client_id`: strava's client ID (from strava's API settings)
-    - `strava_client_secret`: strava's client secret (from strava's API settings)
-    - `strava_access_token`: strava's access token
-    - `strava_refresh_token`: strava's refresh token
-    """
-    with open(secrets_file, mode="w", encoding="utf8") as f:
-      conf = {}
-      conf['strava_access_token'] = strava_access_token
-      conf['strava_refresh_token'] = strava_refresh_token
-      conf['strava_client_id'] = strava_client_id
-      conf['strava_client_secret'] = strava_client_secret
-      f.write(json.dumps(conf))
-
-  def read_config_file(self, config_file: str) -> str:
-    """
-    #### Description
-    Reads the app's config file from disk
-    #### Parameters
-    - `config_file`: full path to the file where config is stored
-    #### Returns
-    - `tracks_output_path`: a path where extracted tracks will be stored, user-provided
-    #### Notes
-    """
-    with open(config_file, mode="r", encoding="utf8") as f:
-      conf = json.loads(f.read())
-      return conf['tracks_output_path'], conf['workouts_output_path']
-
-  def write_config_file(self, config_file: str, tracks_output_path: str, workouts_output_path: str):
-    """
-    #### Description
-    Writes the app's config file to disk
-    #### Parameters
-    - `config_file`: where to store config
-    - `tracks_output_path`: a path where extracted tracks will be stored, user-provided
-    - `workouts_output_path`: a path where extracted workouts will be stored, user-provided
-    """
-    conf = {}
-    conf['tracks_output_path'] = tracks_output_path
-    conf['workouts_output_path'] = workouts_output_path
-    with open(config_file, mode="w", encoding="utf8") as f:
-      f.write(json.dumps(conf))
 
   def ask_for_path(self, message: str, prompt: str) -> str:
     """
     #### Description
-    Asks the user for a directory path
+    Asks the user for a path
     #### Parameters
-    - `message`: message to show to the user
-    - `prompt`: prompt for the input box
+    - `message`: message to display before the prompt
+    - `prompt`: prompt to display
     #### Returns
-    The user-provided path
+    The path provided by the user
     """
     print(message)
-    return input(prompt)
+    return g.getpass(prompt)
+
+  def read_config_file(self, config_file: str) -> tuple:
+    """
+    #### Description
+    Reads the config file
+    #### Parameters
+    - `config_file`: path to the config file
+    #### Returns
+    A tuple containing (tracks_output_path, workouts_output_path)
+    """
+    with open(config_file, 'r', encoding="utf8") as f:
+      config = json.load(f)
+      return config['tracks_output_path'], config['workouts_output_path']
+
+  def write_config_file(self, config_file: str, tracks_output_path: str, workouts_output_path: str):
+    """
+    #### Description
+    Writes the config file
+    #### Parameters
+    - `config_file`: path to the config file
+    - `tracks_output_path`: path where tracks will be stored
+    - `workouts_output_path`: path where workouts will be stored
+    """
+    config = {
+      'tracks_output_path': tracks_output_path,
+      'workouts_output_path': workouts_output_path
+    }
+    with open(config_file, 'w', encoding="utf8") as f:
+      json.dump(config, f, indent=2)
 
   def read_downloaded_workouts(self, db_file: str) -> dict:
     """
     #### Description
-    Loads the downloaded workouts database from its JSON file and returns it as a dict
+    Reads the downloaded workouts database
     #### Parameters
-    - `db_file`: full path to the db file
+    - `db_file`: path to the database file
     #### Returns
-    A dict containing all of the already-downloaded workouts
+    A dictionary containing the downloaded workouts
     """
-    with open(db_file, mode="r", encoding="utf8") as f:
-      return json.loads(f.read())
+    with open(db_file, 'r', encoding="utf8") as f:
+      return json.load(f)
 
   def write_downloaded_workouts(self, db_file: str, workout_db: dict):
     """
     #### Description
-    Writes the downloaded workouts to its JSON file from a dict
+    Writes the downloaded workouts database
     #### Parameters
-    - `db_file`: full path to the db file
-    - `workout_db`: the object containing the downloaded workouts
+    - `db_file`: path to the database file
+    - `workout_db`: dictionary containing the downloaded workouts
     """
-    with open(db_file, mode="w", encoding="utf8") as f:
-      f.write(json.dumps(workout_db))
+    with open(db_file, 'w', encoding="utf8") as f:
+      json.dump(workout_db, f)
