@@ -1,3 +1,7 @@
+# Use the repo venv when it exists, otherwise fall back to PATH python3
+PYTHON := $(if $(wildcard venv/bin/python3),venv/bin/python3,python3)
+PIP := $(if $(wildcard venv/bin/pip3),venv/bin/pip3,pip3)
+
 build:
 	pipreqs --force --mode compat
 
@@ -13,10 +17,10 @@ clean:
 	rm -rf __pycache__
 
 run:
-	python3 run.py
+	$(PYTHON) run.py
 
 setup: requirements.txt
-	pip3 install -r requirements.txt
+	$(PIP) install -r requirements.txt
 
 lint:
 	pylint *.py
